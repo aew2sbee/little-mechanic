@@ -1,7 +1,6 @@
-import type { CSSProperties, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import {
-  PartArt,
-  partPoint,
+  inletPoint,
   slotOf,
   toWorkbench,
   ToolArt,
@@ -10,27 +9,27 @@ import {
   type RepairRequest,
 } from '@/features/vehicles';
 import { FingerHint, useIdleHint } from '@/shared/hint';
-import { useSound, type SoundName } from '@/shared/sound';
-import { StageBackdrop, useTimeout, type Point } from '@/shared/ui';
-import { partBoxStyle } from './partBox';
-import { FINISH_PAUSE_MS } from './timing';
+import type { SoundName } from '@/shared/sound';
+import { StageBackdrop, type Point } from '@/shared/ui';
+import { BenchPartArt, partBoxStyle } from './partBox';
 import { useHoldProgress } from './useHoldProgress';
 
 /** How long the tool needs holding until the tyre is full or the engine has its oil. */
 export const FIX_HOLD_MS = 2400;
-/** The CSS fills everything over this time, and only while the tool is held, so it keeps pace with the logic. */
-const HOLD_STYLE = { '--hold-ms': `${FIX_HOLD_MS}ms` } as CSSProperties;
 
 /** The pump stands on the floor to the right of the vehicle. */
 const PUMP = { x: 1165, y: 640 };
-/** Where the end of the hose in the pump's own drawing ends up, from the middle of its button. */
+/** Where the hose leaves the pump's drawing, from the middle of its button. */
 const PUMP_HOSE_END = { x: 33, y: -29 };
-/** Points on the part, relative to its middle in its own size, like screw positions. */
-const TYRE_VALVE = { x: 23, y: -16 };
-const ENGINE_TOP = { x: 0, y: -42 };
-const OIL_CAN_OVER_ENGINE = { x: 75, y: -167 };
-/** The spout of the oil can once the CSS has tipped it (`.hold-fix--oil` below), from the can's middle. */
+/** The oil can hovers up and to the right of where the oil goes in, in stage units. */
+const OIL_CAN_FROM_INLET = { x: 90, y: -150 };
+/**
+ * The spout once the can is tipped (`.hold-fix--oil.hold-fix--working .hold-tool svg` in
+ * repair.css), from the middle of its button. The drops fall from here onto the inlet.
+ */
 const TIPPED_SPOUT = { x: -66, y: 14 };
+
+const offset = (point: Point, by: Point): Point => ({ x: point.x + by.x, y: point.y + by.y });
 
 interface SceneProps {
   request: RepairRequest;
@@ -40,11 +39,10 @@ interface SceneProps {
   isDone: boolean;
 }
 
-/** A hose from the pump to the tyre, and the tyre, which swells from flat to full as the CSS runs. */
-function TyreScene({ request }: SceneProps) {
-  const slot = slotOf(request);
-  const valve = partPoint(request, TYRE_VALVE);
-  const start = { x: PUMP.x + PUMP_HOSE_END.x, y: PUMP.y + PUMP_HOSE_END.y };
+/** A hose from the pump to the valve, and the tyre, which swells from flat to full as the CSS runs. */
+function TyreScene({ request, tool }: SceneProps) {
+  const start = offset(tool, PUMP_HOSE_END);
+  const valve = inletPoint(request);
   const hose = `M${start.x} ${start.y} C${start.x + 37} ${start.y - 161} ${valve.x + 126} ${valve.y - 146} ${valve.x} ${valve.y}`;
   return (
     <>
@@ -53,12 +51,12 @@ function TyreScene({ request }: SceneProps) {
         <path className="pump-hose__outline" d={hose} />
         <path className="pump-hose__inner" d={hose} />
       </StageBackdrop>
-      <div className="bench-part tyre" style={partBoxStyle(toWorkbench(slot))}>
+      <div className="bench-part tyre" style={partBoxStyle(toWorkbench(slotOf(request)))}>
         <div className="tyre__flat">
-          <PartArt part={request.part} tint={slot.tint} scale={slot.scale} isBroken />
+          <BenchPartArt request={request} isBroken />
         </div>
         <div className="tyre__full">
-          <PartArt part={request.part} tint={slot.tint} scale={slot.scale} />
+          <BenchPartArt request={request} />
         </div>
       </div>
     </>
@@ -67,18 +65,19 @@ function TyreScene({ request }: SceneProps) {
 
 /** Smoke rising from the engine, which the CSS clears as oil goes in, and drops while it pours. */
 function EngineScene({ request, tool, isWorking, isDone }: SceneProps) {
-  const top = partPoint(request, ENGINE_TOP);
+  const inlet = inletPoint(request);
+  const spout = offset(tool, TIPPED_SPOUT);
   return (
     <>
       {!isDone && (
-        <div className="smoke" style={{ left: top.x, top: top.y }} aria-hidden="true">
+        <div className="smoke" style={{ left: inlet.x, top: inlet.y }} aria-hidden="true">
           <span className="smoke__puff" />
           <span className="smoke__puff" />
           <span className="smoke__puff" />
         </div>
       )}
       {isWorking && (
-        <div className="oil-drops" style={{ left: tool.x + TIPPED_SPOUT.x, top: tool.y + TIPPED_SPOUT.y }} aria-hidden="true">
+        <div className="oil-drops" style={{ left: spout.x, top: spout.y }} aria-hidden="true">
           <span className="oil-drop" />
           <span className="oil-drop" />
         </div>
@@ -91,7 +90,7 @@ type HoldFixKind = Exclude<FixKind, 'replace'>;
 
 interface HoldFixDesign {
   /** Repeats while the tool is held. The gaps match the CSS: one push of the pump, one drop of oil. */
-  sound: SoundName;
+  workSound: SoundName;
   soundGapMs: number;
   meter: string;
   toolAt: (request: RepairRequest) => Point;
@@ -101,12 +100,12 @@ interface HoldFixDesign {
 }
 
 const DESIGNS: Record<HoldFixKind, HoldFixDesign> = {
-  inflate: { sound: 'pump', soundGapMs: 300, meter: 'くうき', toolAt: () => PUMP, drawsPart: true, Scene: TyreScene },
+  inflate: { workSound: 'pump', soundGapMs: 300, meter: 'くうき', toolAt: () => PUMP, drawsPart: true, Scene: TyreScene },
   oil: {
-    sound: 'drip',
+    workSound: 'drip',
     soundGapMs: 320,
     meter: 'おいる',
-    toolAt: (request) => partPoint(request, OIL_CAN_OVER_ENGINE),
+    toolAt: (request) => offset(inletPoint(request), OIL_CAN_FROM_INLET),
     drawsPart: false,
     Scene: EngineScene,
   },
@@ -120,23 +119,21 @@ interface HoldFixProps {
 
 /** ② for troubles fixed by holding one tool: the pump fills a flat tyre, the oil can feeds a smoking engine. */
 export function HoldFix({ request, kind, onFinished }: HoldFixProps) {
-  const sound = useSound();
   const showHint = useIdleHint();
-  const { sound: workSound, soundGapMs, meter, toolAt, drawsPart, Scene } = DESIGNS[kind];
+  const { workSound, soundGapMs, meter, toolAt, drawsPart, Scene } = DESIGNS[kind];
   const {
     items: [fill],
     heldIndex,
     handlersFor,
-  } = useHoldProgress({ count: 1, holdMs: FIX_HOLD_MS, sound: workSound, soundGapMs, onDone: () => sound.play('sparkle') });
-
-  useTimeout(onFinished, FINISH_PAUSE_MS, fill.isDone);
+    styleFor,
+  } = useHoldProgress({ count: 1, holdMs: FIX_HOLD_MS, workSound, soundGapMs, onDone: onFinished });
 
   const tool = toolAt(request);
   const isWorking = heldIndex !== undefined;
   const state = fill.isDone ? 'done' : isWorking ? 'working' : 'waiting';
 
   return (
-    <div className={`hold-fix hold-fix--${kind} hold-fix--${state}`} style={HOLD_STYLE}>
+    <div className={`hold-fix hold-fix--${kind} hold-fix--${state}`} style={styleFor(0)}>
       <WorkbenchVehicleArt
         vehicle={request.vehicle}
         expression={fill.isDone ? 'happy' : 'sad'}

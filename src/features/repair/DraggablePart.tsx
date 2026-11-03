@@ -1,8 +1,8 @@
 import { useState, type PointerEvent } from 'react';
-import { PartArt, type RepairRequest, slotOf } from '@/features/vehicles';
+import type { RepairRequest } from '@/features/vehicles';
 import { useSound } from '@/shared/sound';
 import { localPoint, STAGE_SIZE, type Point } from '@/shared/ui';
-import { partBoxStyle } from './partBox';
+import { BenchPartArt, partBoxStyle } from './partBox';
 import { createPartSnap } from './partSnap';
 
 interface DraggablePartProps {
@@ -27,7 +27,6 @@ export function DraggablePart({ request, slot, home, radius, onSnapped }: Dragga
   const [position, setPosition] = useState(home);
   const [isSnapped, setIsSnapped] = useState(false);
   const [grab, setGrab] = useState<Grab>();
-  const { tint, scale } = slotOf(request);
 
   const pointerPosition = (event: PointerEvent, { stage, offset }: Grab): Point => {
     const point = localPoint(event, stage, STAGE_SIZE.width);
@@ -77,7 +76,7 @@ export function DraggablePart({ request, slot, home, radius, onSnapped }: Dragga
         setPosition(home);
       }}
     >
-      <PartArt part={request.part} tint={tint} scale={scale} />
+      <BenchPartArt request={request} />
     </div>
   );
 }

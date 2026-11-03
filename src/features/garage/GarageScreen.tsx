@@ -31,6 +31,7 @@ export function GarageScreen({ requests, onSelect, onOpenStickers, corner }: Gar
           className="bay"
           style={{ left: BAY_CENTRES[index] }}
           aria-label={`${request.vehicle.name}の ${request.part.name}を なおす`}
+          data-fix={request.fix}
           onClick={() => {
             sound.play('tap');
             onSelect(request);

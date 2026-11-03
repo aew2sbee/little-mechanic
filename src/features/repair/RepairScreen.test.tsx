@@ -60,6 +60,17 @@ afterEach(() => {
 });
 
 describe('①困った', () => {
+  it('①を開いたとき、困りごとがひらがなの吹き出しで出る', () => {
+    // Arrange
+    const request = flatTyre;
+
+    // Act
+    renderScreen(request, 'trouble');
+
+    // Assert
+    expect(screen.getByText('たいやが ぺちゃんこ')).toBeInTheDocument();
+  });
+
   it('工具を押したとき、どの工具を選んだかが伝わる', () => {
     // Arrange
     const { onPickTool } = renderScreen(flatTyre, 'trouble');
@@ -86,11 +97,9 @@ describe('①困った', () => {
 });
 
 describe('②部品交換：ねじを外す', () => {
-  const renderRemoval = () => renderStep(RemovalStep);
-
   it('全部のねじを決まった時間長押ししたとき、外し終わりが伝わる', () => {
     // Arrange
-    const { onFinished } = renderRemoval();
+    const { onFinished } = renderStep(RemovalStep);
     holdEveryScrew();
 
     // Act
@@ -104,7 +113,7 @@ describe('②部品交換：ねじを外す', () => {
 
   it('ねじを短く押して離したとき、時間がたってもねじは外れない', () => {
     // Arrange
-    renderRemoval();
+    renderStep(RemovalStep);
     const [screw] = screws();
     holdFor(screw, 300);
     fireEvent.pointerUp(screw);
@@ -120,7 +129,7 @@ describe('②部品交換：ねじを外す', () => {
 
   it('途中で離して押し直したとき、続きから回って外れる', () => {
     // Arrange
-    renderRemoval();
+    renderStep(RemovalStep);
     const [screw] = screws();
     holdFor(screw, 600);
     fireEvent.pointerUp(screw);
@@ -137,7 +146,7 @@ describe('②部品交換：ねじを外す', () => {
 
   it('ねじが残っているとき、外し終わりは伝わらない', () => {
     // Arrange
-    const { onFinished } = renderRemoval();
+    const { onFinished } = renderStep(RemovalStep);
     holdFor(screws()[0], SCREW_HOLD_MS);
 
     // Act
@@ -151,11 +160,9 @@ describe('②部品交換：ねじを外す', () => {
 });
 
 describe('②部品交換：新しい部品をつける', () => {
-  const renderInstallation = () => renderStep(InstallationStep);
-
   it('部品を場所の近くで離したとき、ねじが現れる', () => {
     // Arrange
-    renderInstallation();
+    renderStep(InstallationStep);
 
     // Act
     dropPartAt(toWorkbench(slotOf(brokenSiren)));
@@ -166,7 +173,7 @@ describe('②部品交換：新しい部品をつける', () => {
 
   it('部品を場所から遠くで離したとき、ねじは現れない', () => {
     // Arrange
-    renderInstallation();
+    renderStep(InstallationStep);
 
     // Act
     dropPartAt({ x: 100, y: 100 });
@@ -177,14 +184,11 @@ describe('②部品交換：新しい部品をつける', () => {
 
   it('部品をはめて全部のねじを締めたとき、つけ終わりが伝わる', () => {
     // Arrange
-    const { onFinished } = renderInstallation();
+    const { onFinished } = renderStep(InstallationStep);
     dropPartAt(toWorkbench(slotOf(brokenSiren)));
-    holdEveryScrew();
 
     // Act
-    act(() => {
-      vi.runOnlyPendingTimers();
-    });
+    holdEveryScrew();
 
     // Assert
     expect(onFinished).toHaveBeenCalledOnce();
@@ -242,6 +246,17 @@ describe('②長押しで直す', () => {
 
     // Assert
     expect(onFixed).toHaveBeenCalledOnce();
+  });
+
+  it('②が終わってすぐのときは、くるまの笑顔を見せるあいだ完了はまだ伝わらない', () => {
+    // Arrange
+    const { onFixed } = renderScreen(flatTyre, 'fixing');
+
+    // Act
+    holdFor(screen.getByRole('button', { name: 'くうきいれ' }), FIX_HOLD_MS);
+
+    // Assert
+    expect(onFixed).not.toHaveBeenCalled();
   });
 });
 

@@ -1,5 +1,4 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { REPAIR_REQUESTS } from '../src/features/vehicles/requests';
 
 const centre = async (locator: Locator) => {
   const box = await locator.boundingBox();
@@ -8,19 +7,19 @@ const centre = async (locator: Locator) => {
 };
 
 /**
- * Opens the garage with `requestId` as its first car. With no stickers yet, every request is as
- * likely as any other for that spot, so a random number inside the request's own share picks it.
+ * Opens the garage. A fresh garage lines up one car for each way of fixing, so a test taps the
+ * kind it needs; `Math.random` is pinned only so that every run meets the same vehicles.
  */
-async function openGarageWith(page: Page, requestId: string) {
-  const index = REPAIR_REQUESTS.findIndex((request) => request.id === requestId);
-  if (index < 0) throw new Error(`no request ${requestId}`);
-  await page.addInitScript((value) => {
-    Math.random = () => value;
-  }, (index + 0.5) / REPAIR_REQUESTS.length);
+async function openGarage(page: Page) {
+  await page.addInitScript(() => {
+    Math.random = () => 0;
+  });
   await page.goto('');
 }
 
 const cars = (page: Page) => page.getByRole('button', { name: /なおす$/ });
+const carNeeding = (page: Page, fix: 'replace' | 'inflate' | 'oil') =>
+  cars(page).and(page.locator(`[data-fix="${fix}"]`));
 const stickers = (page: Page) => page.getByRole('listitem', { name: /の しーる$/ });
 const toolTray = (page: Page) => page.getByRole('group', { name: 'こうぐ' });
 const neededTool = (page: Page) => page.getByTestId('needed-tool').getAttribute('data-tool');
@@ -64,11 +63,11 @@ const nextButton = (page: Page) => page.getByRole('button', { name: 'つぎへ' 
 
 test('部品交換の修理を1件最後まで通したとき、シールがもらえて再読み込みしても残る', async ({ page }) => {
   // Arrange
-  await openGarageWith(page, 'police-siren');
+  await openGarage(page);
   await expect(cars(page)).toHaveCount(3);
 
   // Act
-  await cars(page).first().tap();
+  await carNeeding(page, 'replace').tap();
   await pickCorrectTool(page);
   await holdEveryScrew(page);
   await expect(page.getByTestId('new-part')).toBeVisible();
@@ -84,15 +83,15 @@ test('部品交換の修理を1件最後まで通したとき、シールがも�
 });
 
 const HOLD_FIXES = [
-  { trouble: 'パンク', requestId: 'police-tire', tool: 'くうきいれ', meter: 'くうき' },
-  { trouble: 'オイル切れ', requestId: 'bus-engine', tool: 'おいるさし', meter: 'おいる' },
-];
+  { trouble: 'パンク', fix: 'inflate', tool: 'くうきいれ', meter: 'くうき' },
+  { trouble: 'オイル切れ', fix: 'oil', tool: 'おいるさし', meter: 'おいる' },
+] as const;
 
-for (const { trouble, requestId, tool, meter } of HOLD_FIXES) {
+for (const { trouble, fix, tool, meter } of HOLD_FIXES) {
   test(`${trouble}の修理で、${tool}を長押ししてメーターがたまったとき、元気に走る`, async ({ page }) => {
     // Arrange
-    await openGarageWith(page, requestId);
-    await cars(page).first().tap();
+    await openGarage(page);
+    await carNeeding(page, fix).tap();
     await pickCorrectTool(page);
 
     // Act
@@ -107,8 +106,8 @@ for (const { trouble, requestId, tool, meter } of HOLD_FIXES) {
 
 test('まちがった工具を選んだとき、①困ったのまま先へ進まない', async ({ page }) => {
   // Arrange
-  await openGarageWith(page, 'police-siren');
-  await cars(page).first().tap();
+  await openGarage(page);
+  await carNeeding(page, 'replace').tap();
 
   // Act
   await pickWrongTool(page);
@@ -122,8 +121,8 @@ test('まちがった工具を選んだとき、①困ったのまま先へ進�
 
 test('まちがった工具を選んだあとでも、正しい工具を選んだとき②なおすに進む', async ({ page }) => {
   // Arrange
-  await openGarageWith(page, 'police-siren');
-  await cars(page).first().tap();
+  await openGarage(page);
+  await carNeeding(page, 'replace').tap();
   await pickWrongTool(page);
 
   // Act
@@ -136,8 +135,8 @@ test('まちがった工具を選んだあとでも、正しい工具を選ん�
 test('画面全体が縮小されていても、指の位置どおりに部品を動かせる', async ({ page }) => {
   // Arrange
   await page.setViewportSize({ width: 800, height: 500 });
-  await openGarageWith(page, 'police-siren');
-  await cars(page).first().tap();
+  await openGarage(page);
+  await carNeeding(page, 'replace').tap();
   await pickCorrectTool(page);
   await holdEveryScrew(page);
   await expect(page.getByTestId('new-part')).toBeVisible();

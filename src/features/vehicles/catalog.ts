@@ -20,6 +20,8 @@ export interface Part {
   shapes: Shape[];
   /** Drawn over `shapes` while the part is broken. */
   damage: Shape[];
+  /** Where air or oil goes in, for parts fixed that way. Placed like `shapes`. */
+  inlet?: Point;
 }
 
 export interface Tool {
@@ -40,6 +42,8 @@ export const PARTS = {
       { kind: 'path', d: 'M-44 22 Q-60 46 -36 48 H36 Q60 46 44 22 Z', fill: RUBBER },
       { kind: 'path', d: 'M-6 -24 L4 -12 L-4 -4 L6 8', fill: 'none' },
     ],
+    /** The valve, on the rim. */
+    inlet: { x: 23, y: -16 },
   },
   light: {
     name: 'らいと',
@@ -100,6 +104,8 @@ export const PARTS = {
       { kind: 'rect', x: -32, y: 20, w: 64, h: 8, r: 3, fill: '#c9cfd9' },
     ],
     damage: [{ kind: 'path', d: 'M-22 -46 L-8 -26 L-20 -12 L-4 16', fill: 'none' }],
+    /** The top, above the orange cap. */
+    inlet: { x: 0, y: -42 },
   },
 } satisfies Record<string, Part>;
 
@@ -155,21 +161,21 @@ export const TROUBLE_ICONS = {
 
 export type TroubleIconId = keyof typeof TROUBLE_ICONS;
 
-export interface Fix {
+interface Fix {
   toolId: ToolId;
   icon: TroubleIconId;
-  /** The parts this fix makes sense for. Left out, it suits any part. */
-  parts?: readonly PartId[];
+  /** What the vehicle says is wrong, in hiragana, given the part's name. */
+  trouble: (part: string) => string;
 }
 
 /**
- * The ways a trouble is put right, each with its own tool and badge. `replace` swaps the
+ * The ways a trouble is put right, each with its own tool, badge and words. `replace` swaps the
  * broken part, screws and all; `inflate` pumps up a flat tyre; `oil` feeds a smoking engine.
  */
 export const FIXES = {
-  replace: { toolId: 'driver', icon: 'crack' },
-  inflate: { toolId: 'pump', icon: 'flat', parts: ['tire'] },
-  oil: { toolId: 'oiler', icon: 'oil', parts: ['engine'] },
+  replace: { toolId: 'driver', icon: 'crack', trouble: (part) => `${part}が こわれちゃった` },
+  inflate: { toolId: 'pump', icon: 'flat', trouble: (part) => `${part}が ぺちゃんこ` },
+  oil: { toolId: 'oiler', icon: 'oil', trouble: (part) => `${part}の おいるが からっぽ` },
 } as const satisfies Record<string, Fix>;
 
 export type FixKind = keyof typeof FIXES;
@@ -204,6 +210,8 @@ export interface RepairRequest {
   /** Relative to the middle of the part, in the part's own size. Used when the fix is `replace`. */
   screws: Point[];
   icon: TroubleIconId;
+  /** What the vehicle says is wrong, in hiragana. */
+  trouble: string;
 }
 
 /** The size vehicles are drawn in. */
@@ -239,6 +247,13 @@ export function partPoint(request: Pick<RepairRequest, 'vehicle' | 'partId'>, po
   const slot = slotOf(request);
   const scale = slot.scale ?? 1;
   return toWorkbench({ x: slot.x + point.x * scale, y: slot.y + point.y * scale });
+}
+
+/** Stage coordinates of where air or oil goes into a request's part. */
+export function inletPoint(request: Pick<RepairRequest, 'vehicle' | 'partId' | 'part'>): Point {
+  const { inlet } = request.part;
+  if (!inlet) throw new Error(`${request.partId} has nowhere for air or oil to go in`);
+  return partPoint(request, inlet);
 }
 
 /** Stage coordinates of a request's screws. */

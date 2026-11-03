@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { REPAIR_REQUESTS } from './requests';
-import { FIXES, slotOf, TROUBLE_ICONS, type Fix } from './catalog';
+import { inletPoint, slotOf, TROUBLE_ICONS, type FixKind, type PartId } from './catalog';
+
+/** The only part each fix suits, for fixes that do not swap the part. */
+const ONLY_PART: Partial<Record<FixKind, PartId>> = { inflate: 'tire', oil: 'engine' };
 
 describe('くるまと依頼のデータ', () => {
   it('一覧を見たとき、依頼は全部で20件ある', () => {
@@ -77,13 +80,24 @@ describe('くるまと依頼のデータ', () => {
 
     it('直し方を見たとき、部品に合っている', () => {
       // Arrange
-      const fix: Fix = FIXES[sut.fix];
+      const onlyPart = ONLY_PART[sut.fix];
 
       // Act
-      const fits = fix.parts?.includes(sut.partId) ?? true;
+      const fits = onlyPart === undefined || onlyPart === sut.partId;
 
       // Assert
       expect(fits).toBe(true);
+    });
+
+    it('困りごとを見たとき、ひらがなで書かれている', () => {
+      // Arrange
+      const words = sut.trouble;
+
+      // Act
+      const isHiragana = /^[ぁ-んー ]+$/.test(words);
+
+      // Assert
+      expect(isHiragana).toBe(true);
     });
 
     it('アイコンを見たとき、絵がそろっている', () => {
@@ -95,6 +109,21 @@ describe('くるまと依頼のデータ', () => {
 
       // Assert
       expect(shapes.length).toBeGreaterThan(0);
+    });
+  });
+
+  const holdFixes = REPAIR_REQUESTS.filter((request) => request.fix !== 'replace');
+
+  describe.each(holdFixes.map((request) => [request.id, request] as const))('%s', (_id, sut) => {
+    it('空気やオイルで直すとき、部品に入れ口がある', () => {
+      // Arrange
+      const request = sut;
+
+      // Act
+      const inlet = () => inletPoint(request);
+
+      // Assert
+      expect(inlet).not.toThrow();
     });
   });
 });

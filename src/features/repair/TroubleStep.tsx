@@ -44,19 +44,23 @@ export function TroubleStep({ request, onPickTool }: TroubleStepProps) {
         expression="sad"
         brokenPart={request.partId}
       />
+      {/* The vehicle says what is wrong. The pictures tell it too, for children who cannot read yet. */}
       <div className="trouble-bubble">
-        <div className="trouble-bubble__part" role="img" aria-label={`${request.part.name}が こわれた`}>
-          <PartArt part={request.part} tint={slotOf(request).tint} isBroken viewSize={170} />
-          <TroubleBadge icon={request.icon} className="trouble-bubble__badge" />
-        </div>
-        <div
-          className="trouble-bubble__tool"
-          role="img"
-          aria-label={`${request.tool.name}を つかおう`}
-          data-testid="needed-tool"
-          data-tool={request.toolId}
-        >
-          <ToolArt tool={request.tool} silhouette />
+        <p className="trouble-bubble__words">{request.trouble}</p>
+        <div className="trouble-bubble__pictures">
+          <div className="trouble-bubble__part" role="img" aria-label={request.part.name}>
+            <PartArt part={request.part} tint={slotOf(request).tint} isBroken viewSize={170} />
+            <TroubleBadge icon={request.icon} className="trouble-bubble__badge" />
+          </div>
+          <div
+            className="trouble-bubble__tool"
+            role="img"
+            aria-label={`${request.tool.name}を つかおう`}
+            data-testid="needed-tool"
+            data-tool={request.toolId}
+          >
+            <ToolArt tool={request.tool} silhouette />
+          </div>
         </div>
       </div>
       <div className="tool-tray" role="group" aria-label="こうぐ">

@@ -55,29 +55,29 @@ describe('修理の工程進行', () => {
 
     // Act
     const fixing = sut.pickTool('pump');
-    visited.push(fixing.stage, fixing.finishStage('fixing').stage);
+    visited.push(fixing.stage, fixing.finishFixing().stage);
 
     // Assert
     expect(visited).toEqual(['trouble', 'fixing', 'celebration']);
   });
 
-  it('今の工程ではない完了の知らせが来たとき、工程は進まない', () => {
+  it('①困ったのうちに②の完了の知らせが来たとき、工程は進まない', () => {
     // Arrange
     const sut = createRepairFlow({ correctTool: 'pump' });
 
     // Act
-    const result = sut.finishStage('fixing');
+    const result = sut.finishFixing();
 
     // Assert
     expect(result.stage).toBe('trouble');
   });
 
-  it('同じ工程の完了の知らせが2回来たとき、1つしか進まない', () => {
+  it('②の完了の知らせが2回来たとき、1つしか進まない', () => {
     // Arrange
-    const sut = finishToolStep(createRepairFlow({ correctTool: 'pump' })).finishStage('fixing');
+    const sut = finishToolStep(createRepairFlow({ correctTool: 'pump' })).finishFixing();
 
     // Act
-    const result = sut.finishStage('fixing');
+    const result = sut.finishFixing();
 
     // Assert
     expect(result.stage).toBe('celebration');

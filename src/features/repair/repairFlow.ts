@@ -8,15 +8,12 @@ export const STAGES = ['trouble', 'fixing', 'celebration'] as const;
 
 export type RepairStage = (typeof STAGES)[number];
 
-/** Steps that end when their screen says so. ① ends by picking a tool, and ③ hands over to the garage. */
-export type FinishableStage = Exclude<RepairStage, 'trouble' | 'celebration'>;
-
 export interface RepairFlow {
   readonly stage: RepairStage;
   /** A wrong tool changes nothing: there is no failure in this game, only trying again. */
   pickTool(tool: ToolId): RepairFlow;
-  /** Ignored unless `stage` is the current one, so a late or repeated report cannot skip a step. */
-  finishStage(stage: FinishableStage): RepairFlow;
+  /** ② is done. Ignored unless ② is the current step, so a late or repeated report cannot skip one. */
+  finishFixing(): RepairFlow;
 }
 
 export function createRepairFlow({ correctTool }: { correctTool: ToolId }): RepairFlow {
@@ -25,7 +22,7 @@ export function createRepairFlow({ correctTool }: { correctTool: ToolId }): Repa
     const flow: RepairFlow = {
       stage,
       pickTool: (tool) => (stage === 'trouble' && tool === correctTool ? next() : flow),
-      finishStage: (finished) => (finished === stage ? next() : flow),
+      finishFixing: () => (stage === 'fixing' ? next() : flow),
     };
     return flow;
   };

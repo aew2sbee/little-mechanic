@@ -54,19 +54,21 @@ const SCREWS: Record<PartId, RepairRequest['screws']> = {
   ],
 };
 
-/** Each request names the part and how it is put right; the tool and badge come with the fix. */
+/** Each request names the part and how it is put right; the tool, badge and words come with the fix. */
 function request(vehicle: Vehicle, partId: PartId, fix: FixKind): RepairRequest {
-  const { toolId, icon } = FIXES[fix];
+  const { toolId, icon, trouble } = FIXES[fix];
+  const part = PARTS[partId];
   return {
     id: `${vehicle.id}-${partId}`,
     vehicle,
     partId,
-    part: PARTS[partId],
+    part,
     fix,
     toolId,
     tool: TOOLS[toolId],
     screws: SCREWS[partId],
     icon,
+    trouble: trouble(part.name),
   };
 }
 

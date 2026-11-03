@@ -30,12 +30,19 @@ export function createRepairQueue<T extends { id: string }>({
   prefer = () => true,
   varietyOf = (request) => request.id,
 }: RepairQueueOptions<T>): RepairQueue<T> {
+  /** Keeps the requests that pass, unless none do. */
+  const narrow = (pool: readonly T[], keep: (request: T) => boolean) => {
+    const kept = pool.filter(keep);
+    return kept.length > 0 ? kept : pool;
+  };
+
   const pick = (waiting: readonly T[], excludedId?: string): T => {
     const candidates = requests.filter((request) => request.id !== excludedId && !waiting.includes(request));
     const waitingKinds = new Set(waiting.map(varietyOf));
-    const score = (request: T) => (waitingKinds.has(varietyOf(request)) ? 0 : 2) + (prefer(request) ? 1 : 0);
-    const best = Math.max(...candidates.map(score));
-    const pool = candidates.filter((request) => score(request) === best);
+    const pool = narrow(
+      narrow(candidates, (request) => !waitingKinds.has(varietyOf(request))),
+      prefer,
+    );
     return pool[Math.floor(random() * pool.length)];
   };
 

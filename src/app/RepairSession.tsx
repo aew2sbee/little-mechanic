@@ -18,7 +18,7 @@ export function RepairSession({ request, onRepaired, onFinished, onLeave }: Repa
 
   const pickTool = (tool: ToolId) => setFlow(flow.pickTool(tool));
   const fixed = () => {
-    const next = flow.finishStage('fixing');
+    const next = flow.finishFixing();
     if (next === flow) return;
     onRepaired();
     setFlow(next);
