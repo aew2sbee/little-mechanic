@@ -1,5 +1,5 @@
 /** Wiping every last speck is too much to ask of a small child, so seven tenths counts as clean. */
-export const CLEAN_THRESHOLD = 0.7;
+const CLEAN_THRESHOLD = 0.7;
 
 export interface CleaningState {
   /** How much of the dirt is gone, from 0 to 1. */

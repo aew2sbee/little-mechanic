@@ -6,10 +6,11 @@ const centre = async (locator: Locator) => {
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 };
 
+const toolTray = (page: Page) => page.getByRole('group', { name: 'こうぐ' });
+const neededTool = (page: Page) => page.getByTestId('needed-tool').getAttribute('data-tool');
+
 async function pickCorrectTool(page: Page) {
-  const needed = await page.getByTestId('needed-tool').getAttribute('aria-label');
-  const toolName = needed?.split('を')[0] ?? '';
-  await page.getByRole('group', { name: 'こうぐ' }).getByRole('button', { name: toolName }).tap();
+  await toolTray(page).locator(`[data-tool="${await neededTool(page)}"]`).tap();
 }
 
 async function touchEveryScrew(page: Page) {
@@ -67,10 +68,9 @@ test('修理を1件最後まで通したとき、シールがもらえて再読�
   await expect(stickers(page)).toHaveCount(1);
 });
 
-/** Taps a tool that does not fit, chosen from the shadow the vehicle shows. */
+/** Taps a tool that does not fit the shadow the vehicle shows. */
 async function pickWrongTool(page: Page) {
-  const needed = await page.getByTestId('needed-tool').getAttribute('data-tool');
-  await page.getByRole('button', { name: needed === 'drill' ? 'れんち' : 'どりる' }).tap();
+  await toolTray(page).locator(`button:not([data-tool="${await neededTool(page)}"])`).first().tap();
 }
 
 test('まちがった工具を選んだとき、①困ったのまま先へ進まない', async ({ page }) => {
@@ -82,7 +82,7 @@ test('まちがった工具を選んだとき、①困ったのまま先へ進�
   await pickWrongTool(page);
 
   // Assert
-  const tools = page.getByRole('group', { name: 'こうぐ' }).getByRole('button');
+  const tools = toolTray(page).getByRole('button');
   await expect(tools).toHaveCount(4);
   await expect(tools.first()).toBeVisible();
   await expect(page.getByRole('button', { name: 'ねじ' })).toHaveCount(0);

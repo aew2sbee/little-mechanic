@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
-import { PartArt, slotOf, toWorkbench, VehicleArt, WORKBENCH_BOX, type RepairRequest } from '@/features/vehicles';
+import { useState } from 'react';
+import { PartArt, slotOf, toWorkbench, WorkbenchVehicleArt, type RepairRequest } from '@/features/vehicles';
 import { useSound } from '@/shared/sound';
+import { useTimeout } from '@/shared/ui';
 import { partBoxStyle } from './partBox';
 import { ScrewLayer } from './ScrewLayer';
 
-/** Long enough to watch the broken part drop away. */
+/** How long the broken part takes to drop away; the step ends as it disappears. */
 const PART_FALL_MS = 900;
 
 interface RemovalStepProps {
@@ -18,27 +19,16 @@ export function RemovalStep({ request, onFinished }: RemovalStepProps) {
   const [isRemoved, setIsRemoved] = useState(false);
   const slot = slotOf(request);
 
-  useEffect(() => {
-    if (!isRemoved) return;
-    const timer = setTimeout(onFinished, PART_FALL_MS);
-    return () => clearTimeout(timer);
-  }, [isRemoved, onFinished]);
+  useTimeout(onFinished, PART_FALL_MS, isRemoved);
 
   return (
     <>
-      <VehicleArt
-        className="bench-car"
-        style={WORKBENCH_BOX}
-        vehicle={request.vehicle}
-        expression="sad"
-        hiddenPart={request.partId}
-      />
+      <WorkbenchVehicleArt vehicle={request.vehicle} expression="sad" hiddenPart={request.partId} />
       <div
         className={isRemoved ? 'bench-part bench-part--falling' : 'bench-part'}
-        style={partBoxStyle(toWorkbench(slot))}
-        data-testid="broken-part"
+        style={{ ...partBoxStyle(toWorkbench(slot)), animationDuration: `${PART_FALL_MS}ms` }}
       >
-        <PartArt part={request.part} slot={slot} isBroken />
+        <PartArt part={request.part} tint={slot.tint} scale={slot.scale} isBroken />
       </div>
       <ScrewLayer
         request={request}

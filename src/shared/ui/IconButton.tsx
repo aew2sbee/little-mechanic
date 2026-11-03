@@ -36,6 +36,15 @@ export function IconButton({ label, showLabel = false, onClick, children, classN
   );
 }
 
+/** The way back to the garage, the same on every screen. */
+export function HomeButton({ onClick, showLabel }: { onClick: () => void; showLabel?: boolean }) {
+  return (
+    <IconButton label="がれーじ" showLabel={showLabel} onClick={onClick}>
+      <HomeIcon />
+    </IconButton>
+  );
+}
+
 const iconProps = {
   viewBox: '0 0 64 64',
   fill: 'none',

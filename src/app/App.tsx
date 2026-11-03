@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ParadeScreen } from '@/features/celebration';
 import { createRepairQueue, GarageScreen } from '@/features/garage';
 import { createParentSettings, ParentSettingsGate, ParentSettingsScreen } from '@/features/parent-settings';
@@ -11,12 +11,14 @@ import { ScaledStage } from './ScaledStage';
 
 type Screen =
   | { name: 'garage' }
-  | { name: 'repair'; request: RepairRequest }
+  /** `paradeWasLocked` tells whether this repair is the one that unlocks the parade. */
+  | { name: 'repair'; request: RepairRequest; paradeWasLocked: boolean }
   | { name: 'stickers' }
   | { name: 'parade' }
   | { name: 'parent-settings' };
 
 const GARAGE: Screen = { name: 'garage' };
+const PARADE: Screen = { name: 'parade' };
 const STICKER_IDS = REPAIR_REQUESTS.map((request) => request.id);
 
 export function App({ dependencies }: { dependencies: AppDependencies }) {
@@ -30,29 +32,12 @@ export function App({ dependencies }: { dependencies: AppDependencies }) {
   const [collected, setCollected] = useState(() => book.collected());
   const [isSoundOn, setIsSoundOn] = useState(() => settings.isSoundOn());
   const [screen, setScreen] = useState<Screen>(GARAGE);
-  const [hasNewParade, setHasNewParade] = useState(false);
 
   useEffect(() => {
     sound.setMuted(!isSoundOn);
   }, [sound, isSoundOn]);
 
-  const repairedRequest = screen.name === 'repair' ? screen.request : undefined;
-
-  const handleRepaired = useCallback(() => {
-    if (!repairedRequest) return;
-    const wasUnlocked = book.isParadeUnlocked();
-    book.collect(repairedRequest.id);
-    setCollected(book.collected());
-    setHasNewParade(!wasUnlocked && book.isParadeUnlocked());
-  }, [book, repairedRequest]);
-
-  const handleFinished = useCallback(() => {
-    if (repairedRequest) setQueue((current) => current.complete(repairedRequest.id));
-    setHasNewParade(false);
-    setScreen(hasNewParade ? { name: 'parade' } : GARAGE);
-  }, [repairedRequest, hasNewParade]);
-
-  const handleLeave = useCallback(() => setScreen(GARAGE), []);
+  const goToGarage = () => setScreen(GARAGE);
 
   return (
     <SoundProvider value={sound}>
@@ -60,7 +45,7 @@ export function App({ dependencies }: { dependencies: AppDependencies }) {
         {screen.name === 'garage' && (
           <GarageScreen
             requests={queue.waiting}
-            onSelect={(request) => setScreen({ name: 'repair', request })}
+            onSelect={(request) => setScreen({ name: 'repair', request, paradeWasLocked: !book.isParadeUnlocked() })}
             onOpenStickers={() => setScreen({ name: 'stickers' })}
             corner={<ParentSettingsGate onOpen={() => setScreen({ name: 'parent-settings' })} />}
           />
@@ -69,9 +54,14 @@ export function App({ dependencies }: { dependencies: AppDependencies }) {
           <RepairSession
             key={screen.request.id}
             request={screen.request}
-            onRepaired={handleRepaired}
-            onFinished={handleFinished}
-            onLeave={handleLeave}
+            onRepaired={() => {
+              // Everything the repair earns is recorded at once, so nothing after this can lose it.
+              book.collect(screen.request.id);
+              setCollected(book.collected());
+              setQueue((current) => current.complete(screen.request.id));
+            }}
+            onFinished={() => setScreen(screen.paradeWasLocked && book.isParadeUnlocked() ? PARADE : GARAGE)}
+            onLeave={goToGarage}
           />
         )}
         {screen.name === 'stickers' && (
@@ -79,11 +69,11 @@ export function App({ dependencies }: { dependencies: AppDependencies }) {
             requests={REPAIR_REQUESTS}
             collected={collected}
             isParadeUnlocked={book.isParadeUnlocked()}
-            onOpenParade={() => setScreen({ name: 'parade' })}
-            onClose={handleLeave}
+            onOpenParade={() => setScreen(PARADE)}
+            onClose={goToGarage}
           />
         )}
-        {screen.name === 'parade' && <ParadeScreen vehicles={VEHICLES} onClose={handleLeave} />}
+        {screen.name === 'parade' && <ParadeScreen vehicles={VEHICLES} onClose={goToGarage} />}
         {screen.name === 'parent-settings' && (
           <ParentSettingsScreen
             isSoundOn={isSoundOn}
@@ -97,7 +87,7 @@ export function App({ dependencies }: { dependencies: AppDependencies }) {
               book.reset();
               setCollected(book.collected());
             }}
-            onClose={handleLeave}
+            onClose={goToGarage}
           />
         )}
       </ScaledStage>

@@ -1,15 +1,14 @@
-import type { Timers } from '@/shared/hint';
+import type { Timers } from '@/shared/ui';
 
 /** Long enough that a small child will not hold it by accident. */
 export const LONG_PRESS_MS = 3000;
 
 interface LongPressOptions {
-  durationMs?: number;
   timers?: Timers;
   onLongPress: () => void;
 }
 
-export function createLongPress({ durationMs = LONG_PRESS_MS, timers = globalThis, onLongPress }: LongPressOptions) {
+export function createLongPress({ timers = globalThis, onLongPress }: LongPressOptions) {
   let timer: ReturnType<typeof setTimeout> | undefined;
 
   return {
@@ -17,7 +16,7 @@ export function createLongPress({ durationMs = LONG_PRESS_MS, timers = globalThi
       timer ??= timers.setTimeout(() => {
         timer = undefined;
         onLongPress();
-      }, durationMs);
+      }, LONG_PRESS_MS);
     },
     release() {
       if (timer !== undefined) timers.clearTimeout(timer);

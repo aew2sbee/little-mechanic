@@ -37,7 +37,7 @@ export function GarageScreen({ requests, onSelect, onOpenStickers, corner }: Gar
           }}
         >
           <span className="bay__bubble">
-            <PartArt part={request.part} slot={{ ...slotOf(request), scale: 1 }} isBroken viewSize={190} />
+            <PartArt part={request.part} tint={slotOf(request).tint} isBroken viewSize={190} />
             <TroubleBadge icon={request.icon} className="bay__badge" />
           </span>
           <VehicleArt className="bay__car" vehicle={request.vehicle} expression="sad" brokenPart={request.partId} />

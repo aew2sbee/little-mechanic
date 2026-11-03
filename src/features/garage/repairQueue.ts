@@ -1,5 +1,5 @@
 /** Vehicles waiting in the garage at any moment. */
-export const QUEUE_SIZE = 3;
+const QUEUE_SIZE = 3;
 
 export interface RepairQueue<T> {
   readonly waiting: readonly T[];

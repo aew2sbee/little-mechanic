@@ -1,24 +1,24 @@
-import type { RepairStage } from './repairFlow';
+import { STAGES, type RepairStage } from './repairFlow';
 import './repair.css';
 
-const STEPS: { stage: RepairStage; label: string }[] = [
-  { stage: 'trouble', label: 'こまった' },
-  { stage: 'removal', label: 'はずす' },
-  { stage: 'installation', label: 'つける' },
-  { stage: 'cleaning', label: 'おそうじ' },
-  { stage: 'celebration', label: 'げんき' },
-];
+const LABELS: Record<RepairStage, string> = {
+  trouble: 'こまった',
+  removal: 'はずす',
+  installation: 'つける',
+  cleaning: 'おそうじ',
+  celebration: 'げんき',
+};
 
 /** Five stars that fill in as the repair moves along: progress anyone can read. */
 export function StepBar({ stage }: { stage: RepairStage }) {
-  const current = STEPS.findIndex((step) => step.stage === stage);
+  const current = STAGES.indexOf(stage);
   return (
     <ol className="step-bar" aria-label="なおす じゅんばん">
-      {STEPS.map((step, index) => (
+      {STAGES.map((step, index) => (
         <li
-          key={step.stage}
+          key={step}
           className={index < current ? 'step step--done' : index === current ? 'step step--current' : 'step'}
-          aria-label={step.label}
+          aria-label={LABELS[step]}
           aria-current={index === current ? 'step' : undefined}
         >
           <svg viewBox="-24 -24 48 48" aria-hidden="true">

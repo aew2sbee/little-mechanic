@@ -1,8 +1,9 @@
 export type SettingsStorage = Pick<Storage, 'getItem' | 'setItem'>;
 
+const STORAGE_KEY = 'sound-off';
+
 interface ParentSettingsOptions {
   storage: SettingsStorage;
-  storageKey?: string;
 }
 
 export interface ParentSettings {
@@ -10,10 +11,10 @@ export interface ParentSettings {
   setSoundOn(isOn: boolean): void;
 }
 
-export function createParentSettings({ storage, storageKey = 'sound-off' }: ParentSettingsOptions): ParentSettings {
+export function createParentSettings({ storage }: ParentSettingsOptions): ParentSettings {
   const read = () => {
     try {
-      return storage.getItem(storageKey) !== 'true';
+      return storage.getItem(STORAGE_KEY) !== 'true';
     } catch {
       return true;
     }
@@ -26,7 +27,7 @@ export function createParentSettings({ storage, storageKey = 'sound-off' }: Pare
     setSoundOn(isOn) {
       isSoundOn = isOn;
       try {
-        storage.setItem(storageKey, String(!isOn));
+        storage.setItem(STORAGE_KEY, String(!isOn));
       } catch {
         // Storage full or blocked: the setting lasts until the page closes.
       }

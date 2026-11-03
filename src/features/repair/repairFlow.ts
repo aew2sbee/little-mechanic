@@ -1,12 +1,12 @@
 import type { ToolId } from '@/features/vehicles';
 
-/** The steps of a repair, in order: ① to ⑤, then back to the garage. */
-const STAGES = ['trouble', 'removal', 'installation', 'cleaning', 'celebration', 'finished'] as const;
+/** The steps of a repair, in order: ① to ⑤. After ⑤ the vehicle goes back to the garage. */
+export const STAGES = ['trouble', 'removal', 'installation', 'cleaning', 'celebration'] as const;
 
 export type RepairStage = (typeof STAGES)[number];
 
-/** Steps that end when their screen says so. The first ends by picking a tool, and the last never ends. */
-export type FinishableStage = Exclude<RepairStage, 'trouble' | 'finished'>;
+/** Steps that end when their screen says so. ① ends by picking a tool, and ⑤ hands over to the garage. */
+export type FinishableStage = Exclude<RepairStage, 'trouble' | 'celebration'>;
 
 export interface RepairFlow {
   readonly stage: RepairStage;
@@ -16,19 +16,15 @@ export interface RepairFlow {
   finishStage(stage: FinishableStage): RepairFlow;
 }
 
-export function createRepairFlow({
-  correctTool,
-  stage = 'trouble',
-}: {
-  correctTool: ToolId;
-  stage?: RepairStage;
-}): RepairFlow {
-  const nextStep = () => createRepairFlow({ correctTool, stage: STAGES[STAGES.indexOf(stage) + 1] });
-
-  const flow: RepairFlow = {
-    stage,
-    pickTool: (tool) => (stage === 'trouble' && tool === correctTool ? nextStep() : flow),
-    finishStage: (finished) => (finished === stage ? nextStep() : flow),
+export function createRepairFlow({ correctTool }: { correctTool: ToolId }): RepairFlow {
+  const at = (stage: RepairStage): RepairFlow => {
+    const next = () => at(STAGES[STAGES.indexOf(stage) + 1]);
+    const flow: RepairFlow = {
+      stage,
+      pickTool: (tool) => (stage === 'trouble' && tool === correctTool ? next() : flow),
+      finishStage: (finished) => (finished === stage ? next() : flow),
+    };
+    return flow;
   };
-  return flow;
+  return at('trouble');
 }

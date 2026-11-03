@@ -13,7 +13,7 @@ describe('5秒ヒント', () => {
   it('5秒操作がないとき、ヒントが表示される', () => {
     // Arrange
     const onChange = vi.fn();
-    const sut = createIdleHint({ delayMs: 5000, timers: globalThis, onChange });
+    const sut = createIdleHint({ timers: globalThis, onChange });
     sut.start();
 
     // Act
@@ -26,7 +26,7 @@ describe('5秒ヒント', () => {
   it('5秒たつ前のとき、ヒントは表示されない', () => {
     // Arrange
     const onChange = vi.fn();
-    const sut = createIdleHint({ delayMs: 5000, timers: globalThis, onChange });
+    const sut = createIdleHint({ timers: globalThis, onChange });
     sut.start();
 
     // Act
@@ -39,7 +39,7 @@ describe('5秒ヒント', () => {
   it('ヒントが出ているときに触ると、ヒントが消える', () => {
     // Arrange
     const onChange = vi.fn();
-    const sut = createIdleHint({ delayMs: 5000, timers: globalThis, onChange });
+    const sut = createIdleHint({ timers: globalThis, onChange });
     sut.start();
     vi.advanceTimersByTime(5000);
 
@@ -53,7 +53,7 @@ describe('5秒ヒント', () => {
   it('途中で触ったとき、そこから5秒たつまでヒントは表示されない', () => {
     // Arrange
     const onChange = vi.fn();
-    const sut = createIdleHint({ delayMs: 5000, timers: globalThis, onChange });
+    const sut = createIdleHint({ timers: globalThis, onChange });
     sut.start();
     vi.advanceTimersByTime(4000);
     sut.touch();
@@ -68,7 +68,7 @@ describe('5秒ヒント', () => {
   it('止めたあとのとき、ヒントは表示されない', () => {
     // Arrange
     const onChange = vi.fn();
-    const sut = createIdleHint({ delayMs: 5000, timers: globalThis, onChange });
+    const sut = createIdleHint({ timers: globalThis, onChange });
     sut.start();
     sut.stop();
 

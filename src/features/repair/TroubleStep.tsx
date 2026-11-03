@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import { ALL_TOOLS, PartArt, slotOf, ToolArt, TroubleBadge, VehicleArt, WORKBENCH_BOX } from '@/features/vehicles';
+import { ALL_TOOLS, PartArt, slotOf, ToolArt, TroubleBadge, WorkbenchVehicleArt } from '@/features/vehicles';
 import type { RepairRequest, ToolId } from '@/features/vehicles';
 import { FingerHint, useIdleHint } from '@/shared/hint';
 import { useSound } from '@/shared/sound';
+import { STAGE_SIZE } from '@/shared/ui';
 
 const TOOL_BUTTON = { width: 170, height: 124, gap: 28, top: 662 };
 
 const toolLeft = (index: number) => {
   const total = ALL_TOOLS.length * TOOL_BUTTON.width + (ALL_TOOLS.length - 1) * TOOL_BUTTON.gap;
-  return 640 - total / 2 + index * (TOOL_BUTTON.width + TOOL_BUTTON.gap);
+  return STAGE_SIZE.width / 2 - total / 2 + index * (TOOL_BUTTON.width + TOOL_BUTTON.gap);
 };
 
 interface TroubleStepProps {
@@ -37,16 +38,15 @@ export function TroubleStep({ request, onPickTool }: TroubleStepProps) {
 
   return (
     <>
-      <VehicleArt
-        className="bench-car bench-car--arrive"
-        style={WORKBENCH_BOX}
+      <WorkbenchVehicleArt
+        className="bench-car--arrive"
         vehicle={request.vehicle}
         expression="sad"
         brokenPart={request.partId}
       />
       <div className="trouble-bubble">
         <div className="trouble-bubble__part" role="img" aria-label={`${request.part.name}が こわれた`}>
-          <PartArt part={request.part} slot={{ ...slotOf(request), scale: 1 }} isBroken viewSize={170} />
+          <PartArt part={request.part} tint={slotOf(request).tint} isBroken viewSize={170} />
           <TroubleBadge icon={request.icon} className="trouble-bubble__badge" />
         </div>
         <div
@@ -67,6 +67,7 @@ export function TroubleStep({ request, onPickTool }: TroubleStepProps) {
             className={nudge?.tool === id ? 'tool-button tool-button--nope' : 'tool-button'}
             style={{ left: toolLeft(index), top: TOOL_BUTTON.top, width: TOOL_BUTTON.width, height: TOOL_BUTTON.height }}
             aria-label={tool.name}
+            data-tool={id}
             onClick={() => pick(id)}
           >
             <ToolArt tool={tool} />

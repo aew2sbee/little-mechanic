@@ -1,16 +1,3 @@
-.road-scene {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-}
-
-.road-scene__land {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
 .confetti {
   position: absolute;
   inset: 0;
@@ -38,8 +25,9 @@
   left: 300px;
   width: 680px;
   overflow: visible;
+  /* --run-duration comes from CelebrationScreen, which waits for the run to end. */
   animation:
-    run-across 3.2s cubic-bezier(0.3, 0.1, 0.3, 1) both,
+    run-across var(--run-duration, 3.2s) cubic-bezier(0.3, 0.1, 0.3, 1) both,
     run-bounce 0.36s ease-in-out infinite;
 }
 

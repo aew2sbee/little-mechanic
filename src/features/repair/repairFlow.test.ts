@@ -48,21 +48,20 @@ describe('修理の工程進行', () => {
     expect(result.stage).toBe('removal');
   });
 
-  it('工程を順に終えたとき、①から⑤の順に進んで修理が終わる', () => {
+  it('工程を順に終えたとき、①から⑤の順に進む', () => {
     // Arrange
     const sut = finishToolStep(createRepairFlow({ correctTool: 'wrench' }));
     const visited = [sut.stage];
 
     // Act
-    const result = (['removal', 'installation', 'cleaning', 'celebration'] as const).reduce((flow, stage) => {
+    (['removal', 'installation', 'cleaning'] as const).reduce((flow, stage) => {
       const next = flow.finishStage(stage);
       visited.push(next.stage);
       return next;
     }, sut);
 
     // Assert
-    expect(visited).toEqual(['removal', 'installation', 'cleaning', 'celebration', 'finished']);
-    expect(result.stage).toBe('finished');
+    expect(visited).toEqual(['removal', 'installation', 'cleaning', 'celebration']);
   });
 
   it('今の工程ではない完了の知らせが来たとき、工程は進まない', () => {

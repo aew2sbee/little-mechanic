@@ -17,7 +17,8 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   webServer: {
-    command: `npm run build && npm run preview -- --port ${PORT} --strictPort`,
+    // `npm run build` also type-checks; lint and the build already do that, so only bundle here.
+    command: `npx vite build && npx vite preview --port ${PORT} --strictPort`,
     url: `http://localhost:${PORT}/little-mechanic/`,
     reuseExistingServer: !process.env.CI,
   },

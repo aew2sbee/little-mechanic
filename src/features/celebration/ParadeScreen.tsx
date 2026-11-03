@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { VehicleArt, type Vehicle } from '@/features/vehicles';
 import { useSound } from '@/shared/sound';
-import { HomeIcon, IconButton } from '@/shared/ui';
+import { HomeButton } from '@/shared/ui';
 import { RoadScene } from './RoadScene';
 
 /** Seconds between one vehicle entering the road and the next. */
@@ -38,9 +38,7 @@ export function ParadeScreen({ vehicles, onClose }: ParadeScreenProps) {
           />
         ))}
         <div className="parade-home">
-          <IconButton label="がれーじ" onClick={onClose}>
-            <HomeIcon />
-          </IconButton>
+          <HomeButton onClick={onClose} />
         </div>
       </RoadScene>
     </div>

@@ -1,0 +1,5 @@
+.workbench-car {
+  position: absolute;
+  overflow: visible;
+  filter: drop-shadow(0 10px 0 rgb(43 42 61 / 22%));
+}

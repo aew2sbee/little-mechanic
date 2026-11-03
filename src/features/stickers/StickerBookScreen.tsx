@@ -1,6 +1,6 @@
 import type { RepairRequest } from '@/features/vehicles';
 import { useSound } from '@/shared/sound';
-import { FlagIcon, HomeIcon, IconButton, LockIcon } from '@/shared/ui';
+import { FlagIcon, HomeButton, IconButton, LockIcon } from '@/shared/ui';
 import { StickerArt } from './StickerArt';
 import './stickers.css';
 
@@ -39,9 +39,7 @@ export function StickerBookScreen({
         })}
       </ul>
       <div className="sticker-book__side">
-        <IconButton label="がれーじ" showLabel onClick={onClose}>
-          <HomeIcon />
-        </IconButton>
+        <HomeButton showLabel onClick={onClose} />
         {isParadeUnlocked ? (
           <IconButton label="ぱれーど" showLabel onClick={onOpenParade} className="sticker-book__parade">
             <FlagIcon />

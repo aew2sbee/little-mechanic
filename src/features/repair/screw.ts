@@ -1,7 +1,7 @@
 export type ScrewAction = 'remove' | 'tighten';
 
 /** How many touches every screw takes: enough to feel like work, few enough to stay fun. */
-export const TOUCHES_PER_SCREW = 3;
+const TOUCHES_PER_SCREW = 3;
 
 export interface Screw {
   readonly touches: number;

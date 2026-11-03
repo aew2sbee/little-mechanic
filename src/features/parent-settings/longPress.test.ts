@@ -13,7 +13,7 @@ describe('保護者設定の長押し', () => {
   it('3秒長押ししたとき、開く', () => {
     // Arrange
     const onLongPress = vi.fn();
-    const sut = createLongPress({ durationMs: 3000, timers: globalThis, onLongPress });
+    const sut = createLongPress({ timers: globalThis, onLongPress });
     sut.press();
 
     // Act
@@ -26,7 +26,7 @@ describe('保護者設定の長押し', () => {
   it('短く押しただけのとき、開かない', () => {
     // Arrange
     const onLongPress = vi.fn();
-    const sut = createLongPress({ durationMs: 3000, timers: globalThis, onLongPress });
+    const sut = createLongPress({ timers: globalThis, onLongPress });
     sut.press();
     vi.advanceTimersByTime(2999);
     sut.release();
@@ -41,7 +41,7 @@ describe('保護者設定の長押し', () => {
   it('何度も短く押したとき、押した時間は積み重ならない', () => {
     // Arrange
     const onLongPress = vi.fn();
-    const sut = createLongPress({ durationMs: 3000, timers: globalThis, onLongPress });
+    const sut = createLongPress({ timers: globalThis, onLongPress });
     sut.press();
     vi.advanceTimersByTime(2000);
     sut.release();
@@ -57,7 +57,7 @@ describe('保護者設定の長押し', () => {
   it('押している途中で2本目の指が触れたとき、時間はやり直しにならない', () => {
     // Arrange
     const onLongPress = vi.fn();
-    const sut = createLongPress({ durationMs: 3000, timers: globalThis, onLongPress });
+    const sut = createLongPress({ timers: globalThis, onLongPress });
     sut.press();
     vi.advanceTimersByTime(2000);
     sut.press();

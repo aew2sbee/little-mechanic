@@ -1,13 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { StickerArt } from '@/features/stickers';
 import { VehicleArt, type RepairRequest } from '@/features/vehicles';
 import { FingerHint, useIdleHint } from '@/shared/hint';
 import { useSound } from '@/shared/sound';
-import { ArrowIcon, IconButton } from '@/shared/ui';
+import { ArrowIcon, IconButton, useTimeout } from '@/shared/ui';
 import { RoadScene } from './RoadScene';
 
 /** The run across the road ends here; the sticker and the way back appear after it. */
-const RUN_MS = 3200;
+export const RUN_MS = 3200;
+const RUN_STYLE = { '--run-duration': `${RUN_MS}ms` } as CSSProperties;
 const NEXT_BUTTON = { x: 1160, y: 680 };
 
 interface CelebrationScreenProps {
@@ -23,17 +24,17 @@ export function CelebrationScreen({ request, onComplete }: CelebrationScreenProp
 
   useEffect(() => {
     sound.play('vroom');
-    const timer = setTimeout(() => {
-      setHasRun(true);
-      sound.play('fanfare');
-    }, RUN_MS);
-    return () => clearTimeout(timer);
   }, [sound]);
+
+  useTimeout(() => {
+    setHasRun(true);
+    sound.play('fanfare');
+  }, RUN_MS);
 
   return (
     <div className="screen" data-screen="celebration">
       <RoadScene>
-        <VehicleArt className="run-car" vehicle={request.vehicle} />
+        <VehicleArt className="run-car" vehicle={request.vehicle} style={RUN_STYLE} />
         {hasRun && (
           <>
             <p className="cheer">げんきに なったよ！</p>

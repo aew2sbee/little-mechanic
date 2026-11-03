@@ -1,9 +1,3 @@
-.bench-car-clean {
-  position: absolute;
-  overflow: visible;
-  filter: drop-shadow(0 10px 0 rgb(43 42 61 / 22%));
-}
-
 .dirt {
   position: absolute;
   z-index: 10;
@@ -17,6 +11,8 @@
 
 .sponge {
   position: absolute;
+  top: 0;
+  left: 0;
   z-index: 20;
   width: 150px;
   height: 104px;

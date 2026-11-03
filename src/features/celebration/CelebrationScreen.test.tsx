@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { REPAIR_REQUESTS, VEHICLES } from '@/features/vehicles';
-import { CelebrationScreen } from './CelebrationScreen';
+import { CelebrationScreen, RUN_MS } from './CelebrationScreen';
 import { ParadeScreen } from './ParadeScreen';
 
 describe('⑤元気に走る演出', () => {
@@ -32,7 +32,7 @@ describe('⑤元気に走る演出', () => {
 
     // Act
     act(() => {
-      vi.advanceTimersByTime(3200);
+      vi.advanceTimersByTime(RUN_MS);
     });
 
     // Assert
@@ -44,7 +44,7 @@ describe('⑤元気に走る演出', () => {
     const onComplete = vi.fn();
     render(<CelebrationScreen request={REPAIR_REQUESTS[0]} onComplete={onComplete} />);
     act(() => {
-      vi.advanceTimersByTime(3200);
+      vi.advanceTimersByTime(RUN_MS);
     });
 
     // Act

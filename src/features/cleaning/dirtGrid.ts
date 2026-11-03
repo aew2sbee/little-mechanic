@@ -2,7 +2,8 @@ import type { DirtSpot } from '@/features/vehicles';
 import type { Point } from '@/shared/ui';
 
 interface DirtGridOptions {
-  spots: DirtSpot[];
+  /** Circles of dirt; they may overlap. */
+  spots: readonly DirtSpot[];
   width: number;
   height: number;
   /** Side of a measuring cell. Smaller is more exact and slower. */

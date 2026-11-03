@@ -1,4 +1,3 @@
-import { useCallback } from 'react';
 import type { RepairRequest, ToolId } from '@/features/vehicles';
 import { GarageBackdrop } from '@/shared/ui';
 import { InstallationStep } from './InstallationStep';
@@ -16,15 +15,14 @@ interface RepairScreenProps {
 
 /** Steps ① to ③ of a repair, which all happen on the workbench. */
 export function RepairScreen({ request, stage, onPickTool, onFinishStage }: RepairScreenProps) {
-  const finishRemoval = useCallback(() => onFinishStage('removal'), [onFinishStage]);
-  const finishInstallation = useCallback(() => onFinishStage('installation'), [onFinishStage]);
-
   return (
     <div className="screen" data-screen="repair">
       <GarageBackdrop />
       {stage === 'trouble' && <TroubleStep request={request} onPickTool={onPickTool} />}
-      {stage === 'removal' && <RemovalStep request={request} onFinished={finishRemoval} />}
-      {stage === 'installation' && <InstallationStep request={request} onFinished={finishInstallation} />}
+      {stage === 'removal' && <RemovalStep request={request} onFinished={() => onFinishStage('removal')} />}
+      {stage === 'installation' && (
+        <InstallationStep request={request} onFinished={() => onFinishStage('installation')} />
+      )}
     </div>
   );
 }

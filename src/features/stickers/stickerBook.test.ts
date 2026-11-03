@@ -117,7 +117,7 @@ describe('シール帳', () => {
     const storage = createFakeStorage({ stickers: '{not json' });
 
     // Act
-    const sut = createStickerBook({ storage, stickerIds, storageKey: 'stickers' });
+    const sut = createStickerBook({ storage, stickerIds });
 
     // Assert
     expect(sut.collected()).toEqual([]);
@@ -128,7 +128,7 @@ describe('シール帳', () => {
     const storage = createFakeStorage({ stickers: '["a","gone"]' });
 
     // Act
-    const sut = createStickerBook({ storage, stickerIds, storageKey: 'stickers' });
+    const sut = createStickerBook({ storage, stickerIds });
 
     // Assert
     expect(sut.collected()).toEqual(['a']);

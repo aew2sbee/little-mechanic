@@ -1,9 +1,8 @@
-export type Timers = Pick<typeof globalThis, 'setTimeout' | 'clearTimeout'>;
+import type { Timers } from '@/shared/ui';
 
-export const HINT_DELAY_MS = 5000;
+const HINT_DELAY_MS = 5000;
 
 interface IdleHintOptions {
-  delayMs?: number;
   timers?: Timers;
   onChange: (isVisible: boolean) => void;
 }
@@ -16,7 +15,7 @@ export interface IdleHint {
   stop(): void;
 }
 
-export function createIdleHint({ delayMs = HINT_DELAY_MS, timers = globalThis, onChange }: IdleHintOptions): IdleHint {
+export function createIdleHint({ timers = globalThis, onChange }: IdleHintOptions): IdleHint {
   let timer: ReturnType<typeof setTimeout> | undefined;
   let isVisible = false;
 
@@ -28,7 +27,7 @@ export function createIdleHint({ delayMs = HINT_DELAY_MS, timers = globalThis, o
 
   const restart = () => {
     if (timer !== undefined) timers.clearTimeout(timer);
-    timer = timers.setTimeout(() => setVisible(true), delayMs);
+    timer = timers.setTimeout(() => setVisible(true), HINT_DELAY_MS);
   };
 
   return {

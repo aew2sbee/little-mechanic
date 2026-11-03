@@ -1,9 +1,10 @@
-import type { CSSProperties } from 'react';
+import { memo, type CSSProperties } from 'react';
 import {
   PARTS,
   TOOLS,
   TROUBLE_ICONS,
   VEHICLE_VIEW,
+  WORKBENCH_BOX,
   type Part,
   type PartId,
   type PartSlot,
@@ -13,6 +14,7 @@ import {
   type TroubleIconId,
   type Vehicle,
 } from './catalog';
+import './vehicles.css';
 
 const INK = '#2b2a3d';
 
@@ -43,7 +45,7 @@ function PartShapes({ part, isBroken = false }: { part: Part; isBroken?: boolean
   );
 }
 
-export type Expression = 'sad' | 'happy';
+type Expression = 'sad' | 'happy';
 
 function Face({ x, y, expression }: { x: number; y: number; expression: Expression }) {
   const isHappy = expression === 'happy';
@@ -79,7 +81,15 @@ interface VehicleArtProps {
   style?: CSSProperties;
 }
 
-export function VehicleArt({ vehicle, expression = 'happy', brokenPart, hiddenPart, className, style }: VehicleArtProps) {
+/** Memoised: screens re-render on every finger move, and a vehicle is dozens of shapes. */
+export const VehicleArt = memo(function VehicleArt({
+  vehicle,
+  expression = 'happy',
+  brokenPart,
+  hiddenPart,
+  className,
+  style,
+}: VehicleArtProps) {
   const slots = Object.entries(vehicle.slots) as [PartId, PartSlot][];
   return (
     <svg
@@ -110,29 +120,36 @@ export function VehicleArt({ vehicle, expression = 'happy', brokenPart, hiddenPa
       </g>
     </svg>
   );
+});
+
+/** The vehicle on the workbench, where the repair and cleaning screens draw over it. */
+export function WorkbenchVehicleArt({ className, ...props }: Omit<VehicleArtProps, 'style'>) {
+  return (
+    <VehicleArt
+      {...props}
+      className={className ? `workbench-car ${className}` : 'workbench-car'}
+      style={WORKBENCH_BOX}
+    />
+  );
 }
 
 interface PartArtProps {
   part: Part;
-  slot?: PartSlot;
+  /** The colour the part has on its vehicle, from `PartSlot.tint`. */
+  tint?: string;
+  /** Matches the part's size on the vehicle, from `PartSlot.scale`. Leave it out for a picture of the part. */
+  scale?: number;
   isBroken?: boolean;
   /** Width of the square shown; smaller zooms in. Keep `PART_VIEW_SIZE` where sizes must match the vehicle. */
   viewSize?: number;
-  className?: string;
-  style?: CSSProperties;
 }
 
 /** A part on its own, drawn at `PART_VIEW_SIZE` in a square centred on the part. */
-export function PartArt({ part, slot, isBroken, viewSize = PART_VIEW_SIZE, className, style }: PartArtProps) {
+export function PartArt({ part, tint, scale = 1, isBroken, viewSize = PART_VIEW_SIZE }: PartArtProps) {
   const half = viewSize / 2;
   return (
-    <svg
-      className={className}
-      style={{ ...style, color: slot?.tint }}
-      viewBox={`${-half} ${-half} ${viewSize} ${viewSize}`}
-      aria-hidden="true"
-    >
-      <g {...outline} transform={`scale(${slot?.scale ?? 1})`}>
+    <svg style={{ color: tint }} viewBox={`${-half} ${-half} ${viewSize} ${viewSize}`} aria-hidden="true">
+      <g {...outline} transform={`scale(${scale})`}>
         <PartShapes part={part} isBroken={isBroken} />
       </g>
     </svg>
@@ -141,9 +158,9 @@ export function PartArt({ part, slot, isBroken, viewSize = PART_VIEW_SIZE, class
 
 export const PART_VIEW_SIZE = 240;
 
-export function ToolArt({ tool, silhouette = false, className }: { tool: Tool; silhouette?: boolean; className?: string }) {
+export function ToolArt({ tool, silhouette = false }: { tool: Tool; silhouette?: boolean }) {
   return (
-    <svg className={className} viewBox="-72 -72 144 144" aria-hidden="true">
+    <svg viewBox="-72 -72 144 144" aria-hidden="true">
       <g {...outline} style={silhouette ? { filter: 'brightness(0) opacity(0.45)' } : undefined}>
         <Shapes shapes={tool.shapes} />
       </g>

@@ -23,10 +23,23 @@ export default defineConfig({
     },
   ],
   test: {
-    environment: 'jsdom',
-    setupFiles: ['./src/testSetup.ts'],
-    include: ['src/**/*.test.{ts,tsx}', 'eslint.config.test.ts'],
     css: false,
     restoreMocks: true,
+    // Only tests that render React need a DOM; building jsdom for pure logic is most of the run time.
+    projects: [
+      {
+        extends: true,
+        test: { name: 'logic', environment: 'node', include: ['src/**/*.test.ts', 'eslint.config.test.ts'] },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'dom',
+          environment: 'jsdom',
+          include: ['src/**/*.test.tsx'],
+          setupFiles: ['./src/testSetup.ts'],
+        },
+      },
+    ],
   },
 });

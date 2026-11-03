@@ -1,33 +1,29 @@
 import { useEffect, useRef, type PointerEvent } from 'react';
-import { VEHICLE_VIEW, WORKBENCH_BOX, type DirtSpot } from '@/features/vehicles';
+import { VEHICLE_VIEW, WORKBENCH_BOX } from '@/features/vehicles';
 import { localPoint, type Point } from '@/shared/ui';
+import type { DirtBlob } from './dirtBlobs';
 
 /** Canvas pixels per vehicle unit: enough to stay crisp on a high-density tablet. */
 const RESOLUTION = 2;
 const MUD = ['#7b5a3c', '#8d6a48', '#6a4c31'];
 
-/** Mud is drawn as overlapping blobs. Positions are fixed so each vehicle gets dirty the same way. */
-function paintDirt(context: CanvasRenderingContext2D, spots: DirtSpot[]) {
-  spots.forEach((spot, spotIndex) => {
-    for (let blob = 0; blob < 18; blob += 1) {
-      const angle = blob * 2.4 + spotIndex;
-      const distance = spot.r * (0.1 + (blob % 5) * 0.16);
-      context.fillStyle = MUD[(blob + spotIndex) % MUD.length];
-      context.beginPath();
-      context.arc(
-        spot.x + Math.cos(angle) * distance,
-        spot.y + Math.sin(angle) * distance,
-        spot.r * (0.26 + ((blob * 7) % 4) * 0.08),
-        0,
-        Math.PI * 2,
-      );
-      context.fill();
-    }
-  });
+function paintDirt(context: CanvasRenderingContext2D, blobs: readonly DirtBlob[]) {
+  for (const blob of blobs) {
+    context.fillStyle = MUD[blob.shade % MUD.length];
+    context.beginPath();
+    context.arc(blob.x, blob.y, blob.r, 0, Math.PI * 2);
+    context.fill();
+  }
+}
+
+interface Stroke {
+  /** The canvas's box on screen, measured once when the finger lands. */
+  rect: DOMRect;
+  last: Point;
 }
 
 interface DirtCanvasProps {
-  spots: DirtSpot[];
+  blobs: readonly DirtBlob[];
   /** Finger size, in vehicle units. */
   radius: number;
   isCleared: boolean;
@@ -37,36 +33,38 @@ interface DirtCanvasProps {
 }
 
 /** The mud on the vehicle. Rubbing rubs it off here; how clean it is gets measured elsewhere. */
-export function DirtCanvas({ spots, radius, isCleared, onWipe, onRelease }: DirtCanvasProps) {
+export function DirtCanvas({ blobs, radius, isCleared, onWipe, onRelease }: DirtCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const lastPointRef = useRef<Point>(undefined);
+  const contextRef = useRef<CanvasRenderingContext2D>(null);
+  const strokeRef = useRef<Stroke>(undefined);
 
   useEffect(() => {
     const context = canvasRef.current?.getContext('2d');
     if (!context) return;
     context.scale(RESOLUTION, RESOLUTION);
-    paintDirt(context, spots);
+    paintDirt(context, blobs);
     context.globalCompositeOperation = 'destination-out';
     context.lineCap = 'round';
     context.lineWidth = radius * 2;
-  }, [spots, radius]);
+    contextRef.current = context;
+  }, [blobs, radius]);
 
-  const wipe = (event: PointerEvent<HTMLCanvasElement>, from: Point | undefined) => {
-    const point = localPoint(event, event.currentTarget, VEHICLE_VIEW.width);
+  const wipe = (event: PointerEvent, rect: DOMRect, from: Point | undefined) => {
+    const point = localPoint(event, rect, VEHICLE_VIEW.width);
     const start = from ?? point;
-    const context = event.currentTarget.getContext('2d');
+    const context = contextRef.current;
     if (context) {
       context.beginPath();
       context.moveTo(start.x, start.y);
       context.lineTo(point.x, point.y);
       context.stroke();
     }
-    lastPointRef.current = point;
+    strokeRef.current = { rect, last: point };
     onWipe(start, point);
   };
 
   const release = () => {
-    lastPointRef.current = undefined;
+    strokeRef.current = undefined;
     onRelease();
   };
 
@@ -81,10 +79,11 @@ export function DirtCanvas({ spots, radius, isCleared, onWipe, onRelease }: Dirt
       aria-label="どろんこ"
       onPointerDown={(event) => {
         event.currentTarget.setPointerCapture?.(event.pointerId);
-        wipe(event, undefined);
+        wipe(event, event.currentTarget.getBoundingClientRect(), undefined);
       }}
       onPointerMove={(event) => {
-        if (lastPointRef.current) wipe(event, lastPointRef.current);
+        const stroke = strokeRef.current;
+        if (stroke) wipe(event, stroke.rect, stroke.last);
       }}
       onPointerUp={release}
       onPointerCancel={release}

@@ -1,11 +1,12 @@
 export type StickerStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
+const STORAGE_KEY = 'stickers';
+
 interface StickerBookOptions {
   /** Injected so tests need no real localStorage. */
   storage: StickerStorage;
   /** Every sticker that can be collected. */
   stickerIds: readonly string[];
-  storageKey?: string;
 }
 
 export interface StickerBook {
@@ -16,9 +17,9 @@ export interface StickerBook {
   reset(): void;
 }
 
-function load(storage: StickerStorage, key: string, stickerIds: readonly string[]): string[] {
+function load(storage: StickerStorage, stickerIds: readonly string[]): string[] {
   try {
-    const saved: unknown = JSON.parse(storage.getItem(key) ?? '[]');
+    const saved: unknown = JSON.parse(storage.getItem(STORAGE_KEY) ?? '[]');
     return Array.isArray(saved) ? stickerIds.filter((id) => saved.includes(id)) : [];
   } catch {
     return [];
@@ -26,12 +27,12 @@ function load(storage: StickerStorage, key: string, stickerIds: readonly string[
 }
 
 /** Stickers stay in memory as well, so a child keeps them for now if saving ever fails. */
-export function createStickerBook({ storage, stickerIds, storageKey = 'stickers' }: StickerBookOptions): StickerBook {
-  let collected = load(storage, storageKey, stickerIds);
+export function createStickerBook({ storage, stickerIds }: StickerBookOptions): StickerBook {
+  let collected = load(storage, stickerIds);
 
   const save = () => {
     try {
-      storage.setItem(storageKey, JSON.stringify(collected));
+      storage.setItem(STORAGE_KEY, JSON.stringify(collected));
     } catch {
       // Storage full or blocked: the stickers last until the page closes.
     }
@@ -49,7 +50,7 @@ export function createStickerBook({ storage, stickerIds, storageKey = 'stickers'
     reset() {
       collected = [];
       try {
-        storage.removeItem(storageKey);
+        storage.removeItem(STORAGE_KEY);
       } catch {
         // Nothing more can be done; memory is already empty.
       }

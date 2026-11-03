@@ -1,9 +1,9 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { CelebrationScreen } from '@/features/celebration';
 import { CleaningScreen } from '@/features/cleaning';
 import { createRepairFlow, RepairScreen, StepBar, type FinishableStage } from '@/features/repair';
 import type { RepairRequest, ToolId } from '@/features/vehicles';
-import { HomeIcon, IconButton } from '@/shared/ui';
+import { HomeButton } from '@/shared/ui';
 
 interface RepairSessionProps {
   request: RepairRequest;
@@ -17,15 +17,8 @@ interface RepairSessionProps {
 export function RepairSession({ request, onRepaired, onFinished, onLeave }: RepairSessionProps) {
   const [flow, setFlow] = useState(() => createRepairFlow({ correctTool: request.toolId }));
 
-  const pickTool = useCallback((tool: ToolId) => setFlow((current) => current.pickTool(tool)), []);
-  const finishStage = useCallback(
-    (stage: FinishableStage) => setFlow((current) => current.finishStage(stage)),
-    [],
-  );
-  const finishCleaning = useCallback(() => {
-    onRepaired();
-    finishStage('cleaning');
-  }, [onRepaired, finishStage]);
+  const pickTool = (tool: ToolId) => setFlow((current) => current.pickTool(tool));
+  const finishStage = (stage: FinishableStage) => setFlow((current) => current.finishStage(stage));
 
   const { stage } = flow;
 
@@ -34,13 +27,19 @@ export function RepairSession({ request, onRepaired, onFinished, onLeave }: Repa
       {(stage === 'trouble' || stage === 'removal' || stage === 'installation') && (
         <RepairScreen request={request} stage={stage} onPickTool={pickTool} onFinishStage={finishStage} />
       )}
-      {stage === 'cleaning' && <CleaningScreen request={request} onComplete={finishCleaning} />}
+      {stage === 'cleaning' && (
+        <CleaningScreen
+          request={request}
+          onComplete={() => {
+            onRepaired();
+            finishStage('cleaning');
+          }}
+        />
+      )}
       {stage === 'celebration' && <CelebrationScreen request={request} onComplete={onFinished} />}
       {stage !== 'celebration' && (
         <div className="session-home">
-          <IconButton label="がれーじ" onClick={onLeave}>
-            <HomeIcon />
-          </IconButton>
+          <HomeButton onClick={onLeave} />
         </div>
       )}
       <StepBar stage={stage} />

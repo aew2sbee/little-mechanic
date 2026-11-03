@@ -7,7 +7,7 @@ export function StickerArt({ request }: { request: RepairRequest }) {
     <span className="sticker" aria-hidden="true">
       <VehicleArt className="sticker__car" vehicle={request.vehicle} />
       <span className="sticker__part">
-        <PartArt part={request.part} slot={{ ...slotOf(request), scale: 1 }} viewSize={190} />
+        <PartArt part={request.part} tint={slotOf(request).tint} viewSize={190} />
       </span>
     </span>
   );

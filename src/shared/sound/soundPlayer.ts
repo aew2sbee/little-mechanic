@@ -10,8 +10,7 @@ export type SoundName =
   | 'scrub'
   | 'sparkle'
   | 'vroom'
-  | 'fanfare'
-  | 'sticker';
+  | 'fanfare';
 
 export interface SoundPlayer {
   /** Call from a user gesture: browsers keep audio muted until then. */
@@ -58,7 +57,6 @@ const TONES: Record<SoundName, Tone[]> = {
     { frequency: 190, endFrequency: 110, start: 0.7, duration: 0.5, type: 'sawtooth', volume: 0.12 },
   ],
   fanfare: arpeggio([523, 659, 784, 1047, 784, 1047], 0.13, 0.2),
-  sticker: arpeggio([784, 1175], 0.09, 0.2),
 };
 
 interface SoundPlayerOptions {

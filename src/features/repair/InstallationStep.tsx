@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
-import { slotOf, toWorkbench, VehicleArt, WORKBENCH_BOX, type RepairRequest } from '@/features/vehicles';
+import { useState } from 'react';
+import { slotOf, toWorkbench, WorkbenchVehicleArt, type RepairRequest } from '@/features/vehicles';
 import { FingerHint, useIdleHint } from '@/shared/hint';
 import { useSound } from '@/shared/sound';
+import { useTimeout } from '@/shared/ui';
 import { DraggablePart } from './DraggablePart';
 import { ScrewLayer } from './ScrewLayer';
 
@@ -25,17 +26,11 @@ export function InstallationStep({ request, onFinished }: InstallationStepProps)
   const [phase, setPhase] = useState<Phase>('placing');
   const slot = toWorkbench(slotOf(request));
 
-  useEffect(() => {
-    if (phase !== 'finished') return;
-    const timer = setTimeout(onFinished, FINISH_PAUSE_MS);
-    return () => clearTimeout(timer);
-  }, [phase, onFinished]);
+  useTimeout(onFinished, FINISH_PAUSE_MS, phase === 'finished');
 
   return (
     <>
-      <VehicleArt
-        className="bench-car"
-        style={WORKBENCH_BOX}
+      <WorkbenchVehicleArt
         vehicle={request.vehicle}
         expression={phase === 'finished' ? 'happy' : 'sad'}
         hiddenPart={request.partId}

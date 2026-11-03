@@ -43,12 +43,6 @@
   }
 }
 
-.bench-car {
-  position: absolute;
-  overflow: visible;
-  filter: drop-shadow(0 10px 0 rgb(43 42 61 / 22%));
-}
-
 .bench-car--arrive {
   animation: car-arrive 0.9s cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
@@ -260,8 +254,9 @@
   overflow: visible;
 }
 
+/* The duration comes from RemovalStep, which waits for the fall to end. */
 .bench-part--falling {
-  animation: part-fall 0.8s cubic-bezier(0.5, 0, 0.9, 0.6) forwards;
+  animation: part-fall 0.9s cubic-bezier(0.5, 0, 0.9, 0.6) forwards;
 }
 
 @keyframes part-fall {
@@ -280,7 +275,7 @@
 
 .new-part--waiting {
   transform: scale(0.72);
-  transition: left 0.3s ease-out, top 0.3s ease-out, transform 0.15s ease-out;
+  transition: translate 0.3s ease-out, transform 0.15s ease-out;
 }
 
 .new-part--held {
