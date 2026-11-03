@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { REPAIR_REQUESTS } from '../src/features/vehicles/requests';
 
 const centre = async (locator: Locator) => {
   const box = await locator.boundingBox();
@@ -7,14 +8,15 @@ const centre = async (locator: Locator) => {
 };
 
 /**
- * Fixes the garage's random choice, so each test knows which repairs line up. With 0 the first
- * car needs a new part (police-siren) and the second a pump (police-tire); with 0.45 the first
- * car needs oil (bus-engine).
+ * Opens the garage with `requestId` as its first car. With no stickers yet, every request is as
+ * likely as any other for that spot, so a random number inside the request's own share picks it.
  */
-async function openGarage(page: Page, random: number) {
+async function openGarageWith(page: Page, requestId: string) {
+  const index = REPAIR_REQUESTS.findIndex((request) => request.id === requestId);
+  if (index < 0) throw new Error(`no request ${requestId}`);
   await page.addInitScript((value) => {
     Math.random = () => value;
-  }, random);
+  }, (index + 0.5) / REPAIR_REQUESTS.length);
   await page.goto('');
 }
 
@@ -58,17 +60,11 @@ async function dragNewPartIntoPlace(page: Page) {
   await page.mouse.up();
 }
 
-async function holdToolUntilFull(page: Page, tool: string, meter: string) {
-  await holdUntil(page, page.getByRole('button', { name: tool }), () =>
-    expect(page.getByRole('progressbar', { name: meter })).toHaveAttribute('aria-valuenow', '100'),
-  );
-}
-
 const nextButton = (page: Page) => page.getByRole('button', { name: 'つぎへ' });
 
 test('部品交換の修理を1件最後まで通したとき、シールがもらえて再読み込みしても残る', async ({ page }) => {
   // Arrange
-  await openGarage(page, 0);
+  await openGarageWith(page, 'police-siren');
   await expect(cars(page)).toHaveCount(3);
 
   // Act
@@ -87,35 +83,31 @@ test('部品交換の修理を1件最後まで通したとき、シールがも�
   await expect(stickers(page)).toHaveCount(1);
 });
 
-test('パンクの修理で、くうきいれを長押ししてタイヤがふくらんだとき、元気に走る', async ({ page }) => {
-  // Arrange
-  await openGarage(page, 0);
-  await cars(page).nth(1).tap();
-  await pickCorrectTool(page);
+const HOLD_FIXES = [
+  { trouble: 'パンク', requestId: 'police-tire', tool: 'くうきいれ', meter: 'くうき' },
+  { trouble: 'オイル切れ', requestId: 'bus-engine', tool: 'おいるさし', meter: 'おいる' },
+];
 
-  // Act
-  await holdToolUntilFull(page, 'くうきいれ', 'くうき');
+for (const { trouble, requestId, tool, meter } of HOLD_FIXES) {
+  test(`${trouble}の修理で、${tool}を長押ししてメーターがたまったとき、元気に走る`, async ({ page }) => {
+    // Arrange
+    await openGarageWith(page, requestId);
+    await cars(page).first().tap();
+    await pickCorrectTool(page);
 
-  // Assert
-  await expect(nextButton(page)).toBeVisible({ timeout: 10_000 });
-});
+    // Act
+    await holdUntil(page, page.getByRole('button', { name: tool }), () =>
+      expect(page.getByRole('progressbar', { name: meter })).toHaveAttribute('aria-valuenow', '100'),
+    );
 
-test('オイル切れの修理で、おいるさしを長押ししてオイルがたまったとき、元気に走る', async ({ page }) => {
-  // Arrange
-  await openGarage(page, 0.45);
-  await cars(page).first().tap();
-  await pickCorrectTool(page);
-
-  // Act
-  await holdToolUntilFull(page, 'おいるさし', 'おいる');
-
-  // Assert
-  await expect(nextButton(page)).toBeVisible({ timeout: 10_000 });
-});
+    // Assert
+    await expect(nextButton(page)).toBeVisible({ timeout: 10_000 });
+  });
+}
 
 test('まちがった工具を選んだとき、①困ったのまま先へ進まない', async ({ page }) => {
   // Arrange
-  await openGarage(page, 0);
+  await openGarageWith(page, 'police-siren');
   await cars(page).first().tap();
 
   // Act
@@ -130,7 +122,7 @@ test('まちがった工具を選んだとき、①困ったのまま先へ進�
 
 test('まちがった工具を選んだあとでも、正しい工具を選んだとき②なおすに進む', async ({ page }) => {
   // Arrange
-  await openGarage(page, 0);
+  await openGarageWith(page, 'police-siren');
   await cars(page).first().tap();
   await pickWrongTool(page);
 
@@ -144,7 +136,7 @@ test('まちがった工具を選んだあとでも、正しい工具を選ん�
 test('画面全体が縮小されていても、指の位置どおりに部品を動かせる', async ({ page }) => {
   // Arrange
   await page.setViewportSize({ width: 800, height: 500 });
-  await openGarage(page, 0);
+  await openGarageWith(page, 'police-siren');
   await cars(page).first().tap();
   await pickCorrectTool(page);
   await holdEveryScrew(page);

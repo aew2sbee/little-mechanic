@@ -2,21 +2,16 @@ import { useState, type CSSProperties } from 'react';
 import { screwPositions, ToolArt, type RepairRequest } from '@/features/vehicles';
 import { FingerHint, useIdleHint } from '@/shared/hint';
 import { useSound } from '@/shared/sound';
-import { useInterval } from '@/shared/ui';
-import { createHoldProgress } from './holdProgress';
-import { useHold } from './useHold';
+import { useHoldProgress } from './useHoldProgress';
 
 /** How long the driver stays on each screw: long enough to feel the motor work, short enough to stay fun. */
 export const SCREW_HOLD_MS = 1000;
-const WHIRR_GAP_MS = 200;
 /** The CSS turns each screw over this time, and only while it is held, so it keeps pace with the logic. */
 const HOLD_STYLE = { '--hold-ms': `${SCREW_HOLD_MS}ms` } as CSSProperties;
 
-export type ScrewAction = 'remove' | 'tighten';
-
 interface ScrewLayerProps {
   request: RepairRequest;
-  action: ScrewAction;
+  action: 'remove' | 'tighten';
   onAllDone: () => void;
 }
 
@@ -25,20 +20,16 @@ export function ScrewLayer({ request, action, onAllDone }: ScrewLayerProps) {
   const sound = useSound();
   const showHint = useIdleHint();
   const [positions] = useState(() => screwPositions(request));
-  const [screws, setScrews] = useState(() => positions.map(() => createHoldProgress({ holdMs: SCREW_HOLD_MS })));
-
-  const { heldKey, press, release } = useHold(
-    (index: number) => screws[index].remainingMs,
-    (index, ms) => {
-      const turned = screws[index].hold(ms);
-      const next = screws.map((screw, i) => (i === index ? turned : screw));
-      setScrews(next);
-      if (!turned.isDone) return;
+  const { items: screws, heldIndex, handlersFor } = useHoldProgress({
+    count: positions.length,
+    holdMs: SCREW_HOLD_MS,
+    sound: 'whirr',
+    soundGapMs: 200,
+    onDone: (all) => {
       sound.play('pop');
-      if (next.every((screw) => screw.isDone)) onAllDone();
+      if (all.every((screw) => screw.isDone)) onAllDone();
     },
-  );
-  useInterval(() => sound.play('whirr'), WHIRR_GAP_MS, heldKey !== undefined);
+  });
 
   const nextIndex = screws.findIndex((screw) => !screw.isDone);
 
@@ -54,26 +45,21 @@ export function ScrewLayer({ request, action, onAllDone }: ScrewLayerProps) {
           <button
             key={index}
             type="button"
-            className={heldKey === index ? `screw screw--${action} screw--turning` : `screw screw--${action}`}
+            className={heldIndex === index ? `screw screw--${action} screw--turning` : `screw screw--${action}`}
             style={style}
             aria-label="ねじ"
-            onPointerDown={(event) => {
-              if (press(index, event)) sound.play('whirr');
-            }}
-            onPointerUp={release}
-            onPointerCancel={release}
+            {...handlersFor(index)}
           >
-            <span className="screw__shaft" />
             <span className="screw__head" />
           </button>
         );
       })}
-      {heldKey !== undefined && (
-        <div className="tool-in-hand" style={{ left: positions[heldKey].x, top: positions[heldKey].y }}>
+      {heldIndex !== undefined && (
+        <div className="tool-in-hand" style={{ left: positions[heldIndex].x, top: positions[heldIndex].y }}>
           <ToolArt tool={request.tool} />
         </div>
       )}
-      {showHint && heldKey === undefined && nextIndex >= 0 && <FingerHint at={positions[nextIndex]} hold />}
+      {showHint && heldIndex === undefined && nextIndex >= 0 && <FingerHint at={positions[nextIndex]} hold />}
     </>
   );
 }

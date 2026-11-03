@@ -16,17 +16,26 @@ interface RepairQueueOptions<T> {
    * last few stickers by luck alone.
    */
   prefer?: (request: T) => boolean;
+  /**
+   * Requests that share this value are kept apart: the queue lines up ones that differ while
+   * it can, so the garage offers a mix of things to do. This comes before `prefer`; within each
+   * kind the preferred ones still come first, so every kind still shows its next new sticker.
+   */
+  varietyOf?: (request: T) => unknown;
 }
 
 export function createRepairQueue<T extends { id: string }>({
   requests,
   random,
   prefer = () => true,
+  varietyOf = (request) => request.id,
 }: RepairQueueOptions<T>): RepairQueue<T> {
   const pick = (waiting: readonly T[], excludedId?: string): T => {
     const candidates = requests.filter((request) => request.id !== excludedId && !waiting.includes(request));
-    const preferred = candidates.filter(prefer);
-    const pool = preferred.length > 0 ? preferred : candidates;
+    const waitingKinds = new Set(waiting.map(varietyOf));
+    const score = (request: T) => (waitingKinds.has(varietyOf(request)) ? 0 : 2) + (prefer(request) ? 1 : 0);
+    const best = Math.max(...candidates.map(score));
+    const pool = candidates.filter((request) => score(request) === best);
     return pool[Math.floor(random() * pool.length)];
   };
 

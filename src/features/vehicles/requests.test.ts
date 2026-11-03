@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { REPAIR_REQUESTS } from './requests';
-import { slotOf, TROUBLE_ICONS } from './catalog';
+import { FIXES, slotOf, TROUBLE_ICONS, type Fix } from './catalog';
 
 describe('くるまと依頼のデータ', () => {
   it('一覧を見たとき、依頼は全部で20件ある', () => {
@@ -77,10 +77,10 @@ describe('くるまと依頼のデータ', () => {
 
     it('直し方を見たとき、部品に合っている', () => {
       // Arrange
-      const fitsPart = { replace: () => true, inflate: () => sut.partId === 'tire', oil: () => sut.partId === 'engine' };
+      const fix: Fix = FIXES[sut.fix];
 
       // Act
-      const fits = fitsPart[sut.fix]();
+      const fits = fix.parts?.includes(sut.partId) ?? true;
 
       // Assert
       expect(fits).toBe(true);

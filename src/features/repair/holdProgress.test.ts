@@ -65,6 +65,6 @@ describe('長押しの進み具合（ねじ・空気・オイル）', () => {
     const result = sut.hold(500);
 
     // Assert
-    expect(result.heldMs).toBe(1000);
+    expect(result.progress).toBe(1);
   });
 });

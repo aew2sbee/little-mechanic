@@ -27,7 +27,12 @@ export function App({ dependencies }: { dependencies: AppDependencies }) {
   const [book] = useState(() => createStickerBook({ storage, stickerIds: STICKER_IDS }));
   const [settings] = useState(() => createParentSettings({ storage }));
   const [queue, setQueue] = useState(() =>
-    createRepairQueue({ requests: REPAIR_REQUESTS, random, prefer: (request) => !book.has(request.id) }),
+    createRepairQueue({
+      requests: REPAIR_REQUESTS,
+      random,
+      prefer: (request) => !book.has(request.id),
+      varietyOf: (request) => request.fix,
+    }),
   );
   const [collected, setCollected] = useState(() => book.collected());
   const [isSoundOn, setIsSoundOn] = useState(() => settings.isSoundOn());

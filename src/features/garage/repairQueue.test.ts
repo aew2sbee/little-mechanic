@@ -105,6 +105,52 @@ describe('修理待ちキュー', () => {
     expect(sut.waiting).toHaveLength(3);
   });
 
+  describe('直し方をばらばらにする', () => {
+    const mixed = [
+      { id: 'a', fix: 'replace' },
+      { id: 'b', fix: 'replace' },
+      { id: 'c', fix: 'replace' },
+      { id: 'd', fix: 'inflate' },
+      { id: 'e', fix: 'oil' },
+    ];
+    const varietyOf = (request: (typeof mixed)[number]) => request.fix;
+
+    it('ちがう直し方の依頼があるとき、同じ直し方は並ばない', () => {
+      // Arrange
+      const random = fixedRandom(0);
+
+      // Act
+      const sut = createRepairQueue({ requests: mixed, random, varietyOf });
+
+      // Assert
+      expect(new Set(sut.waiting.map(varietyOf)).size).toBe(3);
+    });
+
+    it('1台なおしたとき、なおした依頼と同じ直し方の依頼が入る', () => {
+      // Arrange
+      const sut = createRepairQueue({ requests: mixed, random: fixedRandom(0), varietyOf });
+      const finished = sut.waiting[0];
+
+      // Act
+      const result = sut.complete(finished.id);
+
+      // Assert
+      expect(result.waiting.at(-1)?.fix).toBe(finished.fix);
+    });
+
+    it('同じ直し方の中では、優先したい依頼から並ぶ', () => {
+      // Arrange
+      const prefer = (request: { id: string }) => request.id === 'c';
+      const random = fixedRandom(0);
+
+      // Act
+      const sut = createRepairQueue({ requests: mixed, random, varietyOf, prefer });
+
+      // Assert
+      expect(sut.waiting.map((request) => request.id)).toContain('c');
+    });
+  });
+
   it('なおした依頼のidが並んでいないとき、キューは変わらない', () => {
     // Arrange
     const sut = createRepairQueue({ requests, random: fixedRandom(0) });

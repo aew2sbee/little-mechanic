@@ -126,7 +126,9 @@
   cursor: pointer;
 }
 
-.tool-button:active {
+/* A held tool stays pressed for as long as it works. */
+.tool-button:active,
+.hold-fix--working .hold-tool {
   box-shadow: 0 2px 0 rgb(43 42 61 / 30%);
   transform: translateY(6px);
 }
@@ -154,8 +156,14 @@
 /*
  * Things that work while held (screws, the tyre, the smoke, the meters) are CSS animations that
  * run only while the finger is down. A paused animation keeps its place, so the picture adds up
- * the time held just as the logic does. `--hold-ms` comes from the screen that owns them.
+ * the time held just as the logic does. `--hold-ms` comes from the screen that owns them, and
+ * `--hold-play` turns them on.
  */
+
+.screw--turning,
+.hold-fix--working {
+  --hold-play: running;
+}
 
 /* ② Screws */
 
@@ -185,17 +193,7 @@
     linear-gradient(90deg, transparent 42%, var(--ink) 42% 58%, transparent 58%),
     radial-gradient(circle at 35% 30%, #fff, #c2cad6 60%, #99a3b3);
   box-shadow: 0 0 0 5px rgb(255 214 94 / 90%);
-  animation: screw-head var(--hold-ms) linear both paused;
-}
-
-.screw__shaft {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 20px;
-  margin-left: -10px;
-  background: repeating-linear-gradient(#8d97a8 0 4px, #dfe4ec 4px 8px);
-  animation: screw-shaft var(--hold-ms) linear both paused;
+  animation: screw-head var(--hold-ms) linear both var(--hold-play, paused);
 }
 
 /* Written for taking a screw out; tightening plays the same turn backwards. */
@@ -208,24 +206,7 @@
   }
 }
 
-@keyframes screw-shaft {
-  from {
-    height: 4px;
-    transform: none;
-  }
-  to {
-    height: 26px;
-    transform: translateY(-20px);
-  }
-}
-
-.screw--turning .screw__head,
-.screw--turning .screw__shaft {
-  animation-play-state: running;
-}
-
-.screw--tighten .screw__head,
-.screw--tighten .screw__shaft {
+.screw--tighten .screw__head {
   animation-direction: reverse;
 }
 
@@ -256,22 +237,26 @@
   box-shadow: 0 0 0 5px rgb(113 214 130 / 90%);
 }
 
-/* The electric screwdriver, bit on the screw, buzzing while it turns. */
+/*
+ * The electric screwdriver, buzzing while it turns. The art has its bit at the top; tipped 45°
+ * the bit points up-left, onto the screw, with the grip reaching down-right toward the hand.
+ * The margin then puts the bit's tip (25px in from the box's corner) on the screw.
+ */
 .tool-in-hand {
   position: absolute;
   z-index: 30;
   width: 120px;
   height: 120px;
-  margin: -6px 0 0 -6px;
+  margin: -25px 0 0 -25px;
   pointer-events: none;
-  transform-origin: 6px 6px;
+  transform-origin: 25px 25px;
   animation: tool-buzz 0.08s linear infinite alternate;
 }
 
 .tool-in-hand svg {
   width: 100%;
   height: 100%;
-  transform: rotate(150deg);
+  transform: rotate(-45deg);
 }
 
 @keyframes tool-buzz {
@@ -290,24 +275,17 @@
   inset: 0;
 }
 
+/* A `.tool-button`, bigger, centred on its spot, and held rather than tapped. */
 .hold-tool {
-  position: absolute;
   z-index: 30;
   width: 150px;
   height: 150px;
   margin: -75px 0 0 -75px;
-  padding: 6px;
-  border: 6px solid var(--ink);
   border-radius: 30px;
-  background: #fff6e4;
-  box-shadow: 0 8px 0 rgb(43 42 61 / 30%);
-  cursor: pointer;
   touch-action: none;
 }
 
 .hold-tool svg {
-  width: 100%;
-  height: 100%;
   overflow: visible;
   transition: transform 0.2s ease-out;
 }
@@ -316,12 +294,7 @@
   cursor: default;
 }
 
-.hold-fix--working .hold-tool {
-  box-shadow: 0 2px 0 rgb(43 42 61 / 30%);
-  transform: translateY(6px);
-}
-
-.hold-fix--working .hold-tool--pump svg {
+.hold-fix--inflate.hold-fix--working .hold-tool svg {
   transform-origin: 50% 90%;
   animation: pump-push 0.3s ease-in-out infinite alternate;
 }
@@ -333,20 +306,12 @@
 }
 
 /* Tipped so the spout points down at the engine. */
-.hold-fix--working .hold-tool--oiler svg {
+.hold-fix--oil.hold-fix--working .hold-tool svg {
   transform: rotate(-60deg);
 }
 
-.pump-hose {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  pointer-events: none;
-}
-
-.pump-hose path {
+.pump-hose__outline,
+.pump-hose__inner {
   fill: none;
   stroke-linecap: round;
 }
@@ -372,12 +337,12 @@
 }
 
 .tyre__flat {
-  animation: tyre-flat var(--hold-ms) linear both paused;
+  animation: tyre-flat var(--hold-ms) linear both var(--hold-play, paused);
 }
 
 .tyre__full {
   transform-origin: 50% 69%;
-  animation: tyre-full var(--hold-ms) linear both paused;
+  animation: tyre-full var(--hold-ms) linear both var(--hold-play, paused);
 }
 
 /* The flat tyre stays solid underneath until the full one has nearly covered it. */
@@ -404,13 +369,6 @@
   }
 }
 
-.hold-fix--working .tyre__flat,
-.hold-fix--working .tyre__full,
-.hold-fix--working .smoke,
-.hold-fix--working .fix-meter__fill {
-  animation-play-state: running;
-}
-
 .hold-fix--done .tyre__flat {
   display: none;
 }
@@ -425,7 +383,7 @@
   width: 0;
   height: 0;
   pointer-events: none;
-  animation: smoke-clear var(--hold-ms) linear both paused;
+  animation: smoke-clear var(--hold-ms) linear both var(--hold-play, paused);
 }
 
 @keyframes smoke-clear {
@@ -517,10 +475,10 @@
   height: 100%;
   background: linear-gradient(#a8ecff, #4fc3ee);
   transform-origin: left;
-  animation: meter-fill var(--hold-ms) linear both paused;
+  animation: meter-fill var(--hold-ms) linear both var(--hold-play, paused);
 }
 
-.hold-tool--oiler ~ .fix-meter .fix-meter__fill {
+.hold-fix--oil .fix-meter__fill {
   background: linear-gradient(#ffe39a, #f0b429);
 }
 

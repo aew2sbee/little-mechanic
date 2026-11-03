@@ -155,15 +155,22 @@ export const TROUBLE_ICONS = {
 
 export type TroubleIconId = keyof typeof TROUBLE_ICONS;
 
+export interface Fix {
+  toolId: ToolId;
+  icon: TroubleIconId;
+  /** The parts this fix makes sense for. Left out, it suits any part. */
+  parts?: readonly PartId[];
+}
+
 /**
  * The ways a trouble is put right, each with its own tool and badge. `replace` swaps the
  * broken part, screws and all; `inflate` pumps up a flat tyre; `oil` feeds a smoking engine.
  */
 export const FIXES = {
   replace: { toolId: 'driver', icon: 'crack' },
-  inflate: { toolId: 'pump', icon: 'flat' },
-  oil: { toolId: 'oiler', icon: 'oil' },
-} as const satisfies Record<string, { toolId: ToolId; icon: TroubleIconId }>;
+  inflate: { toolId: 'pump', icon: 'flat', parts: ['tire'] },
+  oil: { toolId: 'oiler', icon: 'oil', parts: ['engine'] },
+} as const satisfies Record<string, Fix>;
 
 export type FixKind = keyof typeof FIXES;
 
@@ -224,9 +231,17 @@ export function toWorkbench(point: Point): Point {
   return { x: WORKBENCH.x + point.x * WORKBENCH.scale, y: WORKBENCH.y + point.y * WORKBENCH.scale };
 }
 
-/** Stage coordinates of a request's screws. */
-export function screwPositions(request: RepairRequest): Point[] {
+/**
+ * Converts a point given relative to the middle of the request's part, in the part's own
+ * size, to stage coordinates. It follows the part wherever, and at whatever size, it sits.
+ */
+export function partPoint(request: Pick<RepairRequest, 'vehicle' | 'partId'>, point: Point): Point {
   const slot = slotOf(request);
   const scale = slot.scale ?? 1;
-  return request.screws.map((screw) => toWorkbench({ x: slot.x + screw.x * scale, y: slot.y + screw.y * scale }));
+  return toWorkbench({ x: slot.x + point.x * scale, y: slot.y + point.y * scale });
+}
+
+/** Stage coordinates of a request's screws. */
+export function screwPositions(request: RepairRequest): Point[] {
+  return request.screws.map((screw) => partPoint(request, screw));
 }

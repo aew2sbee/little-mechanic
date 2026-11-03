@@ -5,12 +5,10 @@ import { useSound } from '@/shared/sound';
 import { useTimeout } from '@/shared/ui';
 import { DraggablePart } from './DraggablePart';
 import { ScrewLayer } from './ScrewLayer';
+import { FINISH_PAUSE_MS } from './timing';
 
 const PART_HOME = { x: 640, y: 712 };
 const SNAP_RADIUS = 120;
-
-/** Long enough to enjoy the vehicle's smile. */
-const FINISH_PAUSE_MS = 800;
 
 type Phase = 'placing' | 'tightening' | 'finished';
 

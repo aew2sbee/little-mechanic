@@ -1,6 +1,5 @@
 /** Something that works only while a finger holds it down: a screw, the pump, the oil can. */
 export interface HoldProgress {
-  readonly heldMs: number;
   readonly remainingMs: number;
   /** From 0 (not started) to 1 (done). */
   readonly progress: number;
@@ -10,12 +9,11 @@ export interface HoldProgress {
 }
 
 export function createHoldProgress({ holdMs, heldMs = 0 }: { holdMs: number; heldMs?: number }): HoldProgress {
-  const held = Math.min(Math.max(heldMs, 0), holdMs);
+  const held = Math.min(heldMs, holdMs);
   return {
-    heldMs: held,
     remainingMs: holdMs - held,
     progress: held / holdMs,
-    isDone: held >= holdMs,
+    isDone: held === holdMs,
     hold: (ms) => createHoldProgress({ holdMs, heldMs: held + ms }),
   };
 }

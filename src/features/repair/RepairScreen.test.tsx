@@ -1,6 +1,7 @@
+import type { ComponentType } from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { REPAIR_REQUESTS, slotOf, toWorkbench } from '@/features/vehicles';
+import { REPAIR_REQUESTS, slotOf, toWorkbench, type RepairRequest } from '@/features/vehicles';
 import { FIX_HOLD_MS } from './HoldFix';
 import { InstallationStep } from './InstallationStep';
 import { PART_FALL_MS, RemovalStep } from './RemovalStep';
@@ -34,12 +35,20 @@ const dropPartAt = (point: { x: number; y: number }) => {
   fireEvent.pointerUp(part, { clientX: point.x, clientY: point.y });
 };
 
-const renderScreen = (request: typeof brokenSiren, stage: 'trouble' | 'fixing') => {
+const renderScreen = (request: RepairRequest, stage: 'trouble' | 'fixing') => {
   const onPickTool = vi.fn();
-  const onFinishStage = vi.fn();
-  const sut = <RepairScreen request={request} stage={stage} onPickTool={onPickTool} onFinishStage={onFinishStage} />;
+  const onFixed = vi.fn();
+  const sut = <RepairScreen request={request} stage={stage} onPickTool={onPickTool} onFixed={onFixed} />;
   render(sut);
-  return { onPickTool, onFinishStage };
+  return { onPickTool, onFixed };
+};
+
+/** One half of replacing the siren: taking it off, or putting the new one on. */
+const renderStep = (Step: ComponentType<{ request: RepairRequest; onFinished: () => void }>) => {
+  const onFinished = vi.fn();
+  const sut = <Step request={brokenSiren} onFinished={onFinished} />;
+  render(sut);
+  return { onFinished };
 };
 
 beforeEach(() => {
@@ -77,12 +86,7 @@ describe('①困った', () => {
 });
 
 describe('②部品交換：ねじを外す', () => {
-  const renderRemoval = () => {
-    const onFinished = vi.fn();
-    const sut = <RemovalStep request={brokenSiren} onFinished={onFinished} />;
-    render(sut);
-    return { onFinished };
-  };
+  const renderRemoval = () => renderStep(RemovalStep);
 
   it('全部のねじを決まった時間長押ししたとき、外し終わりが伝わる', () => {
     // Arrange
@@ -147,12 +151,7 @@ describe('②部品交換：ねじを外す', () => {
 });
 
 describe('②部品交換：新しい部品をつける', () => {
-  const renderInstallation = () => {
-    const onFinished = vi.fn();
-    const sut = <InstallationStep request={brokenSiren} onFinished={onFinished} />;
-    render(sut);
-    return { onFinished };
-  };
+  const renderInstallation = () => renderStep(InstallationStep);
 
   it('部品を場所の近くで離したとき、ねじが現れる', () => {
     // Arrange
@@ -209,7 +208,7 @@ describe('②部品交換の流れ', () => {
 
   it('外して、はめて、締め終わったとき、②の完了が伝わる', () => {
     // Arrange
-    const { onFinishStage } = renderScreen(brokenSiren, 'fixing');
+    const { onFixed } = renderScreen(brokenSiren, 'fixing');
     holdEveryScrew();
     act(() => {
       vi.advanceTimersByTime(PART_FALL_MS);
@@ -223,17 +222,18 @@ describe('②部品交換の流れ', () => {
     });
 
     // Assert
-    expect(onFinishStage).toHaveBeenCalledWith('fixing');
+    expect(onFixed).toHaveBeenCalledOnce();
   });
 });
 
-describe('②空気入れ', () => {
-  const pump = () => screen.getByRole('button', { name: 'くうきいれ' });
-
-  it('くうきいれを決まった時間長押ししたとき、②の完了が伝わる', () => {
+describe('②長押しで直す', () => {
+  it.each([
+    { request: flatTyre, tool: 'くうきいれ' },
+    { request: dryEngine, tool: 'おいるさし' },
+  ])('$toolを決まった時間長押ししたとき、②の完了が伝わる', ({ request, tool }) => {
     // Arrange
-    const { onFinishStage } = renderScreen(flatTyre, 'fixing');
-    holdFor(pump(), FIX_HOLD_MS);
+    const { onFixed } = renderScreen(request, 'fixing');
+    holdFor(screen.getByRole('button', { name: tool }), FIX_HOLD_MS);
 
     // Act
     act(() => {
@@ -241,12 +241,16 @@ describe('②空気入れ', () => {
     });
 
     // Assert
-    expect(onFinishStage).toHaveBeenCalledWith('fixing');
+    expect(onFixed).toHaveBeenCalledOnce();
   });
+});
+
+describe('②空気入れ', () => {
+  const pump = () => screen.getByRole('button', { name: 'くうきいれ' });
 
   it('くうきいれを短く押して離したとき、時間がたっても②は完了にならない', () => {
     // Arrange
-    const { onFinishStage } = renderScreen(flatTyre, 'fixing');
+    const { onFixed } = renderScreen(flatTyre, 'fixing');
     holdFor(pump(), 500);
     fireEvent.pointerUp(pump());
 
@@ -256,7 +260,7 @@ describe('②空気入れ', () => {
     });
 
     // Assert
-    expect(onFinishStage).not.toHaveBeenCalled();
+    expect(onFixed).not.toHaveBeenCalled();
   });
 
   it('くうきいれを途中で離したとき、メーターはそこまでたまったままになる', () => {
@@ -269,21 +273,5 @@ describe('②空気入れ', () => {
 
     // Assert
     expect(screen.getByRole('progressbar', { name: 'くうき' })).toHaveAttribute('aria-valuenow', '50');
-  });
-});
-
-describe('②オイル', () => {
-  it('おいるさしを決まった時間長押ししたとき、②の完了が伝わる', () => {
-    // Arrange
-    const { onFinishStage } = renderScreen(dryEngine, 'fixing');
-    holdFor(screen.getByRole('button', { name: 'おいるさし' }), FIX_HOLD_MS);
-
-    // Act
-    act(() => {
-      vi.runOnlyPendingTimers();
-    });
-
-    // Assert
-    expect(onFinishStage).toHaveBeenCalledWith('fixing');
   });
 });

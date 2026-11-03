@@ -1,26 +1,26 @@
 import { useState } from 'react';
 import { CelebrationScreen } from '@/features/celebration';
-import { createRepairFlow, RepairScreen, StepBar, type FinishableStage } from '@/features/repair';
+import { createRepairFlow, RepairScreen, StepBar } from '@/features/repair';
 import type { RepairRequest, ToolId } from '@/features/vehicles';
 import { HomeButton } from '@/shared/ui';
 
 interface RepairSessionProps {
   request: RepairRequest;
-  /** The new part is in and screwed down: the child has earned the sticker. */
+  /** ② is done (new part, air or oil): the child has earned the sticker. */
   onRepaired: () => void;
   onFinished: () => void;
   onLeave: () => void;
 }
 
-/** One vehicle's whole visit, from ① to ④, across the features that handle each step. */
+/** One vehicle's whole visit, from ① to ③, across the features that handle each step. */
 export function RepairSession({ request, onRepaired, onFinished, onLeave }: RepairSessionProps) {
   const [flow, setFlow] = useState(() => createRepairFlow({ correctTool: request.toolId }));
 
   const pickTool = (tool: ToolId) => setFlow(flow.pickTool(tool));
-  const finishStage = (stage: FinishableStage) => {
-    const next = flow.finishStage(stage);
+  const fixed = () => {
+    const next = flow.finishStage('fixing');
     if (next === flow) return;
-    if (next.stage === 'celebration') onRepaired();
+    onRepaired();
     setFlow(next);
   };
 
@@ -32,7 +32,7 @@ export function RepairSession({ request, onRepaired, onFinished, onLeave }: Repa
         <CelebrationScreen request={request} onComplete={onFinished} />
       ) : (
         <>
-          <RepairScreen request={request} stage={stage} onPickTool={pickTool} onFinishStage={finishStage} />
+          <RepairScreen request={request} stage={stage} onPickTool={pickTool} onFixed={fixed} />
           <div className="session-home">
             <HomeButton onClick={onLeave} />
           </div>
