@@ -35,7 +35,7 @@ jobs:
       - if: github.event.action != 'closed'
         run: npm run build
         env:
-          BASE_PATH: /pikapika-juukiizu/pr-preview/pr-${{ github.event.number }}/
+          BASE_PATH: /little-mechanic/pr-preview/pr-${{ github.event.number }}/
           VITE_DEPLOY_ENV: preview
       - uses: rossjrw/pr-preview-action@v1.8.1
         with:
