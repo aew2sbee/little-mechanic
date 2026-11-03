@@ -1,0 +1,69 @@
+import { useEffect, useState } from 'react';
+import { slotOf, toWorkbench, VehicleArt, WORKBENCH_BOX, type RepairRequest } from '@/features/vehicles';
+import { FingerHint, useIdleHint } from '@/shared/hint';
+import { useSound } from '@/shared/sound';
+import { DraggablePart } from './DraggablePart';
+import { ScrewLayer } from './ScrewLayer';
+
+const PART_HOME = { x: 640, y: 712 };
+const SNAP_RADIUS = 120;
+
+/** Long enough to enjoy the vehicle's smile. */
+const FINISH_PAUSE_MS = 800;
+
+type Phase = 'placing' | 'tightening' | 'finished';
+
+interface InstallationStepProps {
+  request: RepairRequest;
+  onFinished: () => void;
+}
+
+/** ③ The new part goes in its place, and the screws go back in. */
+export function InstallationStep({ request, onFinished }: InstallationStepProps) {
+  const sound = useSound();
+  const showHint = useIdleHint();
+  const [phase, setPhase] = useState<Phase>('placing');
+  const slot = toWorkbench(slotOf(request));
+
+  useEffect(() => {
+    if (phase !== 'finished') return;
+    const timer = setTimeout(onFinished, FINISH_PAUSE_MS);
+    return () => clearTimeout(timer);
+  }, [phase, onFinished]);
+
+  return (
+    <>
+      <VehicleArt
+        className="bench-car"
+        style={WORKBENCH_BOX}
+        vehicle={request.vehicle}
+        expression={phase === 'finished' ? 'happy' : 'sad'}
+        hiddenPart={request.partId}
+      />
+      {phase === 'placing' && (
+        <>
+          <div className="part-slot" style={{ left: slot.x, top: slot.y }} data-testid="part-slot" />
+          <div className="part-pallet" style={{ left: PART_HOME.x, top: PART_HOME.y }} />
+        </>
+      )}
+      <DraggablePart
+        request={request}
+        slot={slot}
+        home={PART_HOME}
+        radius={SNAP_RADIUS}
+        onSnapped={() => setPhase('tightening')}
+      />
+      {phase !== 'placing' && (
+        <ScrewLayer
+          request={request}
+          action="tighten"
+          onAllDone={() => {
+            sound.play('sparkle');
+            setPhase('finished');
+          }}
+        />
+      )}
+      {phase === 'placing' && showHint && <FingerHint at={PART_HOME} dragTo={slot} />}
+    </>
+  );
+}

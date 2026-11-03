@@ -1,0 +1,110 @@
+.parent-gate {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  width: 72px;
+  height: 72px;
+  padding: 14px;
+  border: 4px solid rgb(43 42 61 / 35%);
+  border-radius: 50%;
+  background: rgb(255 246 228 / 60%);
+  color: rgb(43 42 61 / 55%);
+  cursor: pointer;
+}
+
+.parent-gate svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* The ring fills while the button is held, so a parent can tell it is working. */
+.parent-gate--pressing {
+  animation-name: parent-gate-fill;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@keyframes parent-gate-fill {
+  from {
+    box-shadow: 0 0 0 0 rgb(255 156 74 / 90%);
+  }
+  to {
+    box-shadow: 0 0 0 26px rgb(255 156 74 / 90%);
+  }
+}
+
+.parent-settings {
+  display: grid;
+  place-items: center;
+  background: #eef1f5;
+}
+
+.parent-card {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 760px;
+  padding: 40px 56px;
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: 0 6px 24px rgb(43 42 61 / 18%);
+  font-size: 30px;
+}
+
+.parent-card h1 {
+  margin: 0;
+  font-size: 40px;
+}
+
+.parent-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 84px;
+  border-top: 2px solid #e4e7ec;
+  padding-top: 20px;
+}
+
+.parent-row small {
+  margin-left: 18px;
+  color: #6b7280;
+  font-size: 24px;
+}
+
+.parent-confirm {
+  display: flex;
+  gap: 14px;
+}
+
+.parent-button,
+.parent-switch,
+.parent-danger {
+  min-width: 150px;
+  min-height: 68px;
+  padding: 0 24px;
+  border: 2px solid #c6ccd6;
+  border-radius: 16px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  font-size: 26px;
+  cursor: pointer;
+}
+
+.parent-switch--on {
+  border-color: #2e9e5b;
+  background: #2e9e5b;
+  color: #fff;
+}
+
+.parent-danger {
+  border-color: #d43b30;
+  background: #d43b30;
+  color: #fff;
+}
+
+.parent-close {
+  align-self: center;
+  margin-top: 8px;
+  min-width: 260px;
+}

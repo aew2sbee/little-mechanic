@@ -1,0 +1,49 @@
+.finger-hint {
+  position: absolute;
+  z-index: 50;
+  width: 110px;
+  height: 138px;
+  margin-left: -34px;
+  margin-top: -6px;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 4px rgb(43 42 61 / 35%));
+  animation: finger-tap 1s ease-in-out infinite;
+}
+
+.finger-hint svg {
+  width: 100%;
+  height: 100%;
+}
+
+.finger-hint--drag {
+  animation: finger-drag 2s ease-in-out infinite;
+}
+
+@keyframes finger-tap {
+  0%,
+  100% {
+    transform: translateY(16px) scale(1.04);
+  }
+  50% {
+    transform: translateY(0) scale(0.96);
+  }
+}
+
+@keyframes finger-drag {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(1.06);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(0, 0) scale(0.96);
+  }
+  75% {
+    opacity: 1;
+    transform: translate(var(--drag-x), var(--drag-y)) scale(0.96);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--drag-x), var(--drag-y)) scale(1.06);
+  }
+}
