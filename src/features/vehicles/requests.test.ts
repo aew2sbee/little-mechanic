@@ -75,16 +75,15 @@ describe('くるまと依頼のデータ', () => {
       expect(closest).toBeGreaterThanOrEqual(44);
     });
 
-    it('汚れを見たとき、1つ以上あってくるまの絵の内側に収まっている', () => {
+    it('直し方を見たとき、部品に合っている', () => {
       // Arrange
-      const dirt = sut.dirt;
+      const fitsPart = { replace: () => true, inflate: () => sut.partId === 'tire', oil: () => sut.partId === 'engine' };
 
       // Act
-      const isInside = dirt.every((spot) => spot.x >= 0 && spot.x <= 640 && spot.y >= 0 && spot.y <= 360);
+      const fits = fitsPart[sut.fix]();
 
       // Assert
-      expect(dirt.length).toBeGreaterThan(0);
-      expect(isInside).toBe(true);
+      expect(fits).toBe(true);
     });
 
     it('アイコンを見たとき、絵がそろっている', () => {

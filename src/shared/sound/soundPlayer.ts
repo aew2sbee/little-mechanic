@@ -4,10 +4,11 @@
 export type SoundName =
   | 'tap'
   | 'nope'
-  | 'ratchet'
+  | 'whirr'
+  | 'pump'
+  | 'drip'
   | 'pop'
   | 'clunk'
-  | 'scrub'
   | 'sparkle'
   | 'vroom'
   | 'fanfare';
@@ -41,16 +42,15 @@ const arpeggio = (notes: number[], step: number, volume: number): Tone[] =>
 const TONES: Record<SoundName, Tone[]> = {
   tap: [{ frequency: 660, duration: 0.07, type: 'triangle', volume: 0.2 }],
   nope: [{ frequency: 260, endFrequency: 180, duration: 0.2, type: 'sine', volume: 0.22 }],
-  ratchet: [
-    { frequency: 1100, duration: 0.03, type: 'square', volume: 0.08 },
-    { frequency: 900, start: 0.06, duration: 0.03, type: 'square', volume: 0.08 },
-  ],
+  // The three below repeat while a tool is held, so each lasts about as long as the gap between them.
+  whirr: [{ frequency: 170, endFrequency: 210, duration: 0.2, type: 'sawtooth', volume: 0.06 }],
+  pump: [{ frequency: 520, endFrequency: 260, duration: 0.22, type: 'triangle', volume: 0.12 }],
+  drip: [{ frequency: 900, endFrequency: 1500, duration: 0.09, type: 'sine', volume: 0.18 }],
   pop: [{ frequency: 320, endFrequency: 1200, duration: 0.14, type: 'sine', volume: 0.25 }],
   clunk: [
     { frequency: 150, endFrequency: 70, duration: 0.16, type: 'triangle', volume: 0.4 },
     { frequency: 880, start: 0.08, duration: 0.1, type: 'triangle', volume: 0.15 },
   ],
-  scrub: [{ frequency: 420, endFrequency: 520, duration: 0.05, type: 'sawtooth', volume: 0.03 }],
   sparkle: arpeggio([1319, 1568, 1976, 2637], 0.07, 0.14),
   vroom: [
     { frequency: 70, endFrequency: 190, duration: 0.7, type: 'sawtooth', volume: 0.16 },

@@ -1,11 +1,14 @@
 import type { ToolId } from '@/features/vehicles';
 
-/** The steps of a repair, in order: ① to ⑤. After ⑤ the vehicle goes back to the garage. */
-export const STAGES = ['trouble', 'removal', 'installation', 'cleaning', 'celebration'] as const;
+/**
+ * The steps of a repair, in order: ① to ③. ② is whatever the trouble needs (a new part, air or
+ * oil). After ③ the vehicle goes back to the garage.
+ */
+export const STAGES = ['trouble', 'fixing', 'celebration'] as const;
 
 export type RepairStage = (typeof STAGES)[number];
 
-/** Steps that end when their screen says so. ① ends by picking a tool, and ⑤ hands over to the garage. */
+/** Steps that end when their screen says so. ① ends by picking a tool, and ③ hands over to the garage. */
 export type FinishableStage = Exclude<RepairStage, 'trouble' | 'celebration'>;
 
 export interface RepairFlow {

@@ -16,3 +16,14 @@ export function useTimeout(callback: () => void, delayMs: number, isActive = tru
     return () => clearTimeout(timer);
   }, [delayMs, isActive]);
 }
+
+/** Calls `callback` every `intervalMs` for as long as `isActive` stays true. */
+export function useInterval(callback: () => void, intervalMs: number, isActive = true) {
+  const onTick = useEffectEvent(callback);
+
+  useEffect(() => {
+    if (!isActive) return;
+    const timer = setInterval(() => onTick(), intervalMs);
+    return () => clearInterval(timer);
+  }, [intervalMs, isActive]);
+}

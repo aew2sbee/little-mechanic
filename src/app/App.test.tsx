@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { SoundPlayer } from '@/shared/sound';
 import { App } from './App';
 import type { AppDependencies, AppStorage } from './dependencies';
@@ -28,11 +28,6 @@ const tapFirstCar = () => {
 };
 
 describe('アプリ全体の画面遷移', () => {
-  beforeEach(() => {
-    // jsdom has no canvas; the drawing does not change what is measured.
-    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
-  });
-
   it('起動したとき、ガレージに3台のくるまが並ぶ', () => {
     // Arrange
     const dependencies = createDependencies();

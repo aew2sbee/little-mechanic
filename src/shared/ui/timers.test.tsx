@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useTimeout } from './timers';
+import { useInterval, useTimeout } from './timers';
 
 describe('useTimeout', () => {
   beforeEach(() => {
@@ -72,5 +72,64 @@ describe('useTimeout', () => {
 
     // Assert
     expect([first.mock.calls.length, second.mock.calls.length]).toEqual([0, 1]);
+  });
+});
+
+describe('useInterval', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('動いている間、決まった間隔ごとに呼ばれる', () => {
+    // Arrange
+    const sut = useInterval;
+    const callback = vi.fn();
+    renderHook(() => sut(callback, 200));
+
+    // Act
+    act(() => {
+      vi.advanceTimersByTime(200 * 3);
+    });
+
+    // Assert
+    expect(callback).toHaveBeenCalledTimes(3);
+  });
+
+  it('止まっているとき、時間がたっても呼ばれない', () => {
+    // Arrange
+    const sut = useInterval;
+    const callback = vi.fn();
+    renderHook(() => sut(callback, 200, false));
+
+    // Act
+    act(() => {
+      vi.advanceTimersByTime(200 * 3);
+    });
+
+    // Assert
+    expect(callback).not.toHaveBeenCalled();
+  });
+
+  it('途中で止めたとき、それ以降は呼ばれない', () => {
+    // Arrange
+    const sut = useInterval;
+    const callback = vi.fn();
+    const { rerender } = renderHook(({ isActive }) => sut(callback, 200, isActive), { initialProps: { isActive: true } });
+    act(() => {
+      vi.advanceTimersByTime(200);
+    });
+    rerender({ isActive: false });
+
+    // Act
+    act(() => {
+      vi.advanceTimersByTime(200 * 3);
+    });
+
+    // Assert
+    expect(callback).toHaveBeenCalledOnce();
   });
 });

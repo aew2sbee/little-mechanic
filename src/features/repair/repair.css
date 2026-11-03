@@ -151,7 +151,13 @@
   }
 }
 
-/* ②③ Screws */
+/*
+ * Things that work while held (screws, the tyre, the smoke, the meters) are CSS animations that
+ * run only while the finger is down. A paused animation keeps its place, so the picture adds up
+ * the time held just as the logic does. `--hold-ms` comes from the screen that owns them.
+ */
+
+/* ② Screws */
 
 .screw {
   position: absolute;
@@ -179,8 +185,7 @@
     linear-gradient(90deg, transparent 42%, var(--ink) 42% 58%, transparent 58%),
     radial-gradient(circle at 35% 30%, #fff, #c2cad6 60%, #99a3b3);
   box-shadow: 0 0 0 5px rgb(255 214 94 / 90%);
-  transform: translateY(calc(var(--lift) * -20px)) rotate(var(--turn));
-  transition: transform 0.14s ease-out;
+  animation: screw-head var(--hold-ms) linear both paused;
 }
 
 .screw__shaft {
@@ -188,15 +193,56 @@
   top: 50%;
   left: 50%;
   width: 20px;
-  height: calc(var(--lift) * 22px + 4px);
   margin-left: -10px;
   background: repeating-linear-gradient(#8d97a8 0 4px, #dfe4ec 4px 8px);
-  transform: translateY(calc(var(--lift) * -20px));
+  animation: screw-shaft var(--hold-ms) linear both paused;
 }
 
-.screw--remove-done {
+/* Written for taking a screw out; tightening plays the same turn backwards. */
+@keyframes screw-head {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translateY(-20px) rotate(-1080deg);
+  }
+}
+
+@keyframes screw-shaft {
+  from {
+    height: 4px;
+    transform: none;
+  }
+  to {
+    height: 26px;
+    transform: translateY(-20px);
+  }
+}
+
+.screw--turning .screw__head,
+.screw--turning .screw__shaft {
+  animation-play-state: running;
+}
+
+.screw--tighten .screw__head,
+.screw--tighten .screw__shaft {
+  animation-direction: reverse;
+}
+
+.screw--done {
   pointer-events: none;
+}
+
+.screw--done .screw__head {
+  animation: none;
+}
+
+.screw--remove.screw--done {
   animation: screw-away 0.5s ease-in forwards;
+}
+
+.screw--remove.screw--done .screw__head {
+  transform: translateY(-20px);
 }
 
 @keyframes screw-away {
@@ -206,14 +252,11 @@
   }
 }
 
-.screw--tighten-done {
-  pointer-events: none;
-}
-
-.screw--tighten-done .screw__head {
+.screw--tighten.screw--done .screw__head {
   box-shadow: 0 0 0 5px rgb(113 214 130 / 90%);
 }
 
+/* The electric screwdriver, bit on the screw, buzzing while it turns. */
 .tool-in-hand {
   position: absolute;
   z-index: 30;
@@ -222,7 +265,7 @@
   margin: -6px 0 0 -6px;
   pointer-events: none;
   transform-origin: 6px 6px;
-  animation: tool-turn 0.28s ease-in-out forwards;
+  animation: tool-buzz 0.08s linear infinite alternate;
 }
 
 .tool-in-hand svg {
@@ -231,16 +274,267 @@
   transform: rotate(150deg);
 }
 
-@keyframes tool-turn {
+@keyframes tool-buzz {
   from {
-    transform: rotate(-30deg);
+    transform: rotate(-2deg);
   }
   to {
-    transform: rotate(35deg);
+    transform: rotate(2deg) translate(1px, 1px);
   }
 }
 
-/* ②③ Parts */
+/* ② The pump and the oil can */
+
+.hold-fix {
+  position: absolute;
+  inset: 0;
+}
+
+.hold-tool {
+  position: absolute;
+  z-index: 30;
+  width: 150px;
+  height: 150px;
+  margin: -75px 0 0 -75px;
+  padding: 6px;
+  border: 6px solid var(--ink);
+  border-radius: 30px;
+  background: #fff6e4;
+  box-shadow: 0 8px 0 rgb(43 42 61 / 30%);
+  cursor: pointer;
+  touch-action: none;
+}
+
+.hold-tool svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  transition: transform 0.2s ease-out;
+}
+
+.hold-tool:disabled {
+  cursor: default;
+}
+
+.hold-fix--working .hold-tool {
+  box-shadow: 0 2px 0 rgb(43 42 61 / 30%);
+  transform: translateY(6px);
+}
+
+.hold-fix--working .hold-tool--pump svg {
+  transform-origin: 50% 90%;
+  animation: pump-push 0.3s ease-in-out infinite alternate;
+}
+
+@keyframes pump-push {
+  to {
+    transform: scaleY(0.86);
+  }
+}
+
+/* Tipped so the spout points down at the engine. */
+.hold-fix--working .hold-tool--oiler svg {
+  transform: rotate(-60deg);
+}
+
+.pump-hose {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.pump-hose path {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.pump-hose__outline {
+  stroke: var(--ink);
+  stroke-width: 18px;
+}
+
+.pump-hose__inner {
+  stroke: #7b8499;
+  stroke-width: 8px;
+}
+
+.tyre {
+  z-index: 15;
+}
+
+.tyre__flat,
+.tyre__full {
+  position: absolute;
+  inset: 0;
+}
+
+.tyre__flat {
+  animation: tyre-flat var(--hold-ms) linear both paused;
+}
+
+.tyre__full {
+  transform-origin: 50% 69%;
+  animation: tyre-full var(--hold-ms) linear both paused;
+}
+
+/* The flat tyre stays solid underneath until the full one has nearly covered it. */
+@keyframes tyre-flat {
+  60% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes tyre-full {
+  from {
+    opacity: 0;
+    transform: scale(1.08, 0.76);
+  }
+  35% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.hold-fix--working .tyre__flat,
+.hold-fix--working .tyre__full,
+.hold-fix--working .smoke,
+.hold-fix--working .fix-meter__fill {
+  animation-play-state: running;
+}
+
+.hold-fix--done .tyre__flat {
+  display: none;
+}
+
+.hold-fix--done .tyre__full {
+  animation: part-click 0.3s ease-out;
+}
+
+.smoke {
+  position: absolute;
+  z-index: 15;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  animation: smoke-clear var(--hold-ms) linear both paused;
+}
+
+@keyframes smoke-clear {
+  to {
+    opacity: 0;
+  }
+}
+
+.smoke__puff {
+  position: absolute;
+  width: 70px;
+  height: 70px;
+  margin: -35px 0 0 -35px;
+  border: 5px solid var(--ink);
+  border-radius: 50%;
+  background: #9aa0ad;
+  animation: puff-rise 1.8s ease-out infinite;
+}
+
+.smoke__puff:nth-child(2) {
+  animation-delay: -0.6s;
+}
+
+.smoke__puff:nth-child(3) {
+  animation-delay: -1.2s;
+}
+
+@keyframes puff-rise {
+  from {
+    opacity: 0.9;
+    transform: translate(0, 0) scale(0.5);
+  }
+  to {
+    opacity: 0;
+    transform: translate(30px, -150px) scale(1.3);
+  }
+}
+
+/* In front of the can, so the drops are seen leaving the spout. */
+.oil-drops {
+  position: absolute;
+  z-index: 35;
+  pointer-events: none;
+}
+
+.oil-drop {
+  position: absolute;
+  width: 30px;
+  height: 38px;
+  margin-left: -15px;
+  border: 5px solid var(--ink);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background: #f0b429;
+  animation: oil-drip 0.64s ease-in infinite;
+}
+
+.oil-drop:nth-child(2) {
+  animation-delay: -0.32s;
+}
+
+@keyframes oil-drip {
+  from {
+    transform: translateY(0) scale(0.7);
+  }
+  85% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(150px) scale(1);
+  }
+}
+
+.fix-meter {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  width: 640px;
+  height: 58px;
+  overflow: hidden;
+  border: 6px solid var(--ink);
+  border-radius: 999px;
+  background: #fff6e4;
+  transform: translateX(-50%);
+}
+
+.fix-meter__fill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(#a8ecff, #4fc3ee);
+  transform-origin: left;
+  animation: meter-fill var(--hold-ms) linear both paused;
+}
+
+.hold-tool--oiler ~ .fix-meter .fix-meter__fill {
+  background: linear-gradient(#ffe39a, #f0b429);
+}
+
+@keyframes meter-fill {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.hold-fix--done .fix-meter__fill {
+  animation: none;
+}
+
+/* ② Parts */
 
 .bench-part {
   position: absolute;
@@ -254,9 +548,11 @@
   overflow: visible;
 }
 
-/* The duration comes from RemovalStep, which waits for the fall to end. */
+/* RemovalStep sets the duration, and waits for the fall to end. */
 .bench-part--falling {
-  animation: part-fall 0.9s cubic-bezier(0.5, 0, 0.9, 0.6) forwards;
+  animation-name: part-fall;
+  animation-timing-function: cubic-bezier(0.5, 0, 0.9, 0.6);
+  animation-fill-mode: forwards;
 }
 
 @keyframes part-fall {

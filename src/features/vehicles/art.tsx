@@ -122,7 +122,7 @@ export const VehicleArt = memo(function VehicleArt({
   );
 });
 
-/** The vehicle on the workbench, where the repair and cleaning screens draw over it. */
+/** The vehicle on the workbench, where the repair steps draw over it. */
 export function WorkbenchVehicleArt({ className, ...props }: Omit<VehicleArtProps, 'style'>) {
   return (
     <VehicleArt

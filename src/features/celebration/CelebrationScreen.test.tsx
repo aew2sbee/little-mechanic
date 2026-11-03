@@ -4,7 +4,7 @@ import { REPAIR_REQUESTS, VEHICLES } from '@/features/vehicles';
 import { CelebrationScreen, RUN_MS } from './CelebrationScreen';
 import { ParadeScreen } from './ParadeScreen';
 
-describe('⑤元気に走る演出', () => {
+describe('④元気に走る演出', () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });

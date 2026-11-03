@@ -6,6 +6,20 @@ const centre = async (locator: Locator) => {
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 };
 
+/**
+ * Fixes the garage's random choice, so each test knows which repairs line up. With 0 the first
+ * car needs a new part (police-siren) and the second a pump (police-tire); with 0.45 the first
+ * car needs oil (bus-engine).
+ */
+async function openGarage(page: Page, random: number) {
+  await page.addInitScript((value) => {
+    Math.random = () => value;
+  }, random);
+  await page.goto('');
+}
+
+const cars = (page: Page) => page.getByRole('button', { name: /なおす$/ });
+const stickers = (page: Page) => page.getByRole('listitem', { name: /の しーる$/ });
 const toolTray = (page: Page) => page.getByRole('group', { name: 'こうぐ' });
 const neededTool = (page: Page) => page.getByTestId('needed-tool').getAttribute('data-tool');
 
@@ -13,11 +27,25 @@ async function pickCorrectTool(page: Page) {
   await toolTray(page).locator(`[data-tool="${await neededTool(page)}"]`).tap();
 }
 
-async function touchEveryScrew(page: Page) {
+/** Taps a tool that does not fit the shadow the vehicle shows. */
+async function pickWrongTool(page: Page) {
+  await toolTray(page).locator(`button:not([data-tool="${await neededTool(page)}"])`).first().tap();
+}
+
+/** Keeps a finger on `target` until `isDone` holds, then lets go. */
+async function holdUntil(page: Page, target: Locator, isDone: () => Promise<void>) {
+  const at = await centre(target);
+  await page.mouse.move(at.x, at.y);
+  await page.mouse.down();
+  await isDone();
+  await page.mouse.up();
+}
+
+async function holdEveryScrew(page: Page) {
   const screws = page.getByRole('button', { name: 'ねじ' });
   await expect(screws.first()).toBeVisible();
-  while ((await screws.count()) > 0) {
-    await screws.first().tap();
+  for (let left = await screws.count(); left > 0; left -= 1) {
+    await holdUntil(page, screws.first(), () => expect(screws).toHaveCount(left - 1));
   }
 }
 
@@ -30,36 +58,27 @@ async function dragNewPartIntoPlace(page: Page) {
   await page.mouse.up();
 }
 
-async function rubOffTheDirt(page: Page) {
-  const dirt = await page.getByTestId('dirt').boundingBox();
-  if (!dirt) throw new Error('no dirt');
-  for (let row = 0; row < 9; row += 1) {
-    const y = dirt.y + (dirt.height * (row + 0.5)) / 9;
-    await page.mouse.move(dirt.x, y);
-    await page.mouse.down();
-    await page.mouse.move(dirt.x + dirt.width, y, { steps: 8 });
-    await page.mouse.up();
-  }
+async function holdToolUntilFull(page: Page, tool: string, meter: string) {
+  await holdUntil(page, page.getByRole('button', { name: tool }), () =>
+    expect(page.getByRole('progressbar', { name: meter })).toHaveAttribute('aria-valuenow', '100'),
+  );
 }
 
-const cars = (page: Page) => page.getByRole('button', { name: /なおす$/ });
-const stickers = (page: Page) => page.getByRole('listitem', { name: /の しーる$/ });
+const nextButton = (page: Page) => page.getByRole('button', { name: 'つぎへ' });
 
-test('修理を1件最後まで通したとき、シールがもらえて再読み込みしても残る', async ({ page }) => {
+test('部品交換の修理を1件最後まで通したとき、シールがもらえて再読み込みしても残る', async ({ page }) => {
   // Arrange
-  await page.goto('');
+  await openGarage(page, 0);
   await expect(cars(page)).toHaveCount(3);
 
   // Act
   await cars(page).first().tap();
   await pickCorrectTool(page);
-  await touchEveryScrew(page);
+  await holdEveryScrew(page);
   await expect(page.getByTestId('new-part')).toBeVisible();
   await dragNewPartIntoPlace(page);
-  await touchEveryScrew(page);
-  await expect(page.getByTestId('dirt')).toBeVisible();
-  await rubOffTheDirt(page);
-  await page.getByRole('button', { name: 'つぎへ' }).tap();
+  await holdEveryScrew(page);
+  await nextButton(page).tap();
 
   // Assert
   await expect(cars(page)).toHaveCount(3);
@@ -68,14 +87,35 @@ test('修理を1件最後まで通したとき、シールがもらえて再読�
   await expect(stickers(page)).toHaveCount(1);
 });
 
-/** Taps a tool that does not fit the shadow the vehicle shows. */
-async function pickWrongTool(page: Page) {
-  await toolTray(page).locator(`button:not([data-tool="${await neededTool(page)}"])`).first().tap();
-}
+test('パンクの修理で、くうきいれを長押ししてタイヤがふくらんだとき、元気に走る', async ({ page }) => {
+  // Arrange
+  await openGarage(page, 0);
+  await cars(page).nth(1).tap();
+  await pickCorrectTool(page);
+
+  // Act
+  await holdToolUntilFull(page, 'くうきいれ', 'くうき');
+
+  // Assert
+  await expect(nextButton(page)).toBeVisible({ timeout: 10_000 });
+});
+
+test('オイル切れの修理で、おいるさしを長押ししてオイルがたまったとき、元気に走る', async ({ page }) => {
+  // Arrange
+  await openGarage(page, 0.45);
+  await cars(page).first().tap();
+  await pickCorrectTool(page);
+
+  // Act
+  await holdToolUntilFull(page, 'おいるさし', 'おいる');
+
+  // Assert
+  await expect(nextButton(page)).toBeVisible({ timeout: 10_000 });
+});
 
 test('まちがった工具を選んだとき、①困ったのまま先へ進まない', async ({ page }) => {
   // Arrange
-  await page.goto('');
+  await openGarage(page, 0);
   await cars(page).first().tap();
 
   // Act
@@ -83,14 +123,14 @@ test('まちがった工具を選んだとき、①困ったのまま先へ進�
 
   // Assert
   const tools = toolTray(page).getByRole('button');
-  await expect(tools).toHaveCount(4);
+  await expect(tools).toHaveCount(3);
   await expect(tools.first()).toBeVisible();
   await expect(page.getByRole('button', { name: 'ねじ' })).toHaveCount(0);
 });
 
-test('まちがった工具を選んだあとでも、正しい工具を選んだとき②取り外しに進む', async ({ page }) => {
+test('まちがった工具を選んだあとでも、正しい工具を選んだとき②なおすに進む', async ({ page }) => {
   // Arrange
-  await page.goto('');
+  await openGarage(page, 0);
   await cars(page).first().tap();
   await pickWrongTool(page);
 
@@ -104,10 +144,10 @@ test('まちがった工具を選んだあとでも、正しい工具を選ん�
 test('画面全体が縮小されていても、指の位置どおりに部品を動かせる', async ({ page }) => {
   // Arrange
   await page.setViewportSize({ width: 800, height: 500 });
-  await page.goto('');
+  await openGarage(page, 0);
   await cars(page).first().tap();
   await pickCorrectTool(page);
-  await touchEveryScrew(page);
+  await holdEveryScrew(page);
   await expect(page.getByTestId('new-part')).toBeVisible();
 
   // Act

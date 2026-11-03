@@ -16,7 +16,7 @@ interface CelebrationScreenProps {
   onComplete: () => void;
 }
 
-/** ⑤ The vehicle runs happily, and the child gets a sticker. */
+/** ④ The vehicle runs happily, and the child gets a sticker. */
 export function CelebrationScreen({ request, onComplete }: CelebrationScreenProps) {
   const sound = useSound();
   const [hasRun, setHasRun] = useState(false);

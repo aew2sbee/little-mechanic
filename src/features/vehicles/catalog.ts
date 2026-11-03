@@ -105,43 +105,38 @@ export const PARTS = {
 
 export type PartId = keyof typeof PARTS;
 
+/** Tools are drawn upright, working end at the top: the screwdriver bit sits at (0, -60). */
 export const TOOLS = {
-  wrench: {
-    name: 'れんち',
+  driver: {
+    name: 'でんどうどらいばー',
     shapes: [
-      {
-        kind: 'path',
-        d: 'M-12 56 V-16 Q-34 -26 -32 -46 Q-30 -56 -22 -60 V-38 H-6 V-58 Q14 -62 22 -46 Q30 -26 12 -16 V56 Q0 66 -12 56 Z',
-        fill: METAL,
-      },
+      { kind: 'path', d: 'M-4 -34 V-50 L0 -60 L4 -50 V-34 Z', fill: METAL },
+      { kind: 'rect', x: -12, y: -40, w: 24, h: 12, r: 4, fill: DARK },
+      { kind: 'rect', x: -21, y: -30, w: 42, h: 90, r: 18, fill: '#ffc531' },
+      { kind: 'rect', x: -21, y: 16, w: 42, h: 44, r: 18, fill: RUBBER },
+      { kind: 'rect', x: -8, y: -18, w: 16, h: 22, r: 6, fill: '#f0453c' },
+      { kind: 'path', d: 'M4 22 L-6 38 H1 L-3 52 L8 34 H1 Z', fill: LAMP },
     ],
   },
-  screwdriver: {
-    name: 'どらいばー',
+  pump: {
+    name: 'くうきいれ',
     shapes: [
-      { kind: 'path', d: 'M-6 6 V-46 L-3 -60 H3 L6 -46 V6 Z', fill: METAL },
-      { kind: 'rect', x: -19, y: 2, w: 38, h: 56, r: 14, fill: '#f0453c' },
-      { kind: 'rect', x: -6, y: 12, w: 12, h: 36, r: 6, fill: '#ffb4a8' },
+      { kind: 'path', d: 'M16 30 Q50 30 50 0 Q50 -22 34 -30', fill: 'none' },
+      { kind: 'rect', x: -4, y: -50, w: 8, h: 32, fill: METAL },
+      { kind: 'rect', x: -36, y: -60, w: 72, h: 14, r: 7, fill: DARK },
+      { kind: 'rect', x: -18, y: -22, w: 36, h: 70, r: 10, fill: '#3f8fd8' },
+      { kind: 'circle', x: 0, y: 4, r: 10, fill: '#fff' },
+      { kind: 'rect', x: -42, y: 46, w: 84, h: 14, r: 6, fill: DARK },
     ],
   },
-  pliers: {
-    name: 'ぺんち',
+  oiler: {
+    name: 'おいるさし',
     shapes: [
-      { kind: 'path', d: 'M-4 -6 L-32 54 L-16 60 L12 2 Z', fill: '#3f8fd8' },
-      { kind: 'path', d: 'M4 -6 L32 54 L16 60 L-12 2 Z', fill: '#3f8fd8' },
-      { kind: 'path', d: 'M-20 -8 L-14 -60 L-3 -60 L4 2 Z', fill: METAL },
-      { kind: 'path', d: 'M20 -8 L14 -60 L3 -60 L-4 2 Z', fill: METAL },
-      { kind: 'circle', x: 0, y: -4, r: 8, fill: DARK },
-    ],
-  },
-  drill: {
-    name: 'どりる',
-    shapes: [
-      { kind: 'rect', x: 42, y: -24, w: 24, h: 7, r: 2, fill: METAL },
-      { kind: 'path', d: 'M26 -36 L46 -28 V-14 L26 -6 Z', fill: DARK },
-      { kind: 'path', d: 'M-24 2 L-38 54 H-6 L6 2 Z', fill: '#f0a13c' },
-      { kind: 'rect', x: -52, y: -40, w: 80, h: 44, r: 14, fill: '#f0a13c' },
-      { kind: 'rect', x: -38, y: -28, w: 34, h: 8, r: 4, fill: '#ffd79a' },
+      { kind: 'path', d: 'M-2 -8 L-42 -56 L-50 -48 L-12 -2 Z', fill: METAL },
+      { kind: 'path', d: 'M32 18 Q58 20 54 38 Q50 52 32 46', fill: 'none' },
+      { kind: 'path', d: 'M-22 8 L-8 -14 H8 L22 8 Z', fill: '#49b06f' },
+      { kind: 'rect', x: -34, y: 4, w: 68, h: 54, r: 16, fill: '#49b06f' },
+      { kind: 'path', d: 'M0 16 C6 24 10 29 10 34 A10 10 0 0 1 -10 34 C-10 29 -6 24 0 16 Z', fill: LAMP },
     ],
   },
 } satisfies Record<string, Tool>;
@@ -151,25 +146,26 @@ export type ToolId = keyof typeof TOOLS;
 /** Badges that say what is wrong, drawn within a 40 × 40 box around (0, 0). */
 export const TROUBLE_ICONS = {
   crack: [{ kind: 'path', d: 'M4 -17 L-11 3 H-1 L-5 17 L11 -5 H1 Z', fill: '#fff' }],
-  smoke: [
-    {
-      kind: 'path',
-      d: 'M-12 10 A8 8 0 0 1 -12 -6 A9 9 0 0 1 4 -11 A8 8 0 0 1 13 -1 A6 6 0 0 1 11 10 Z',
-      fill: '#fff',
-    },
-  ],
   flat: [
     { kind: 'path', d: 'M-6 -17 H6 V-6 H13 L0 6 L-13 -6 H-6 Z', fill: '#fff' },
     { kind: 'rect', x: -16, y: 10, w: 32, h: 7, r: 3, fill: '#fff' },
   ],
-  loose: [
-    { kind: 'path', d: 'M-2 -2 L4 2 L-8 18 L-14 14 Z', fill: '#fff' },
-    { kind: 'circle', x: 4, y: -6, r: 9, fill: '#fff' },
-    { kind: 'path', d: 'M13 -17 Q19 -10 15 -2 M18 4 Q16 10 10 12', fill: 'none' },
-  ],
+  oil: [{ kind: 'path', d: 'M0 -17 C8 -6 13 1 13 6 A13 13 0 0 1 -13 6 C-13 1 -8 -6 0 -17 Z', fill: '#fff' }],
 } satisfies Record<string, Shape[]>;
 
 export type TroubleIconId = keyof typeof TROUBLE_ICONS;
+
+/**
+ * The ways a trouble is put right, each with its own tool and badge. `replace` swaps the
+ * broken part, screws and all; `inflate` pumps up a flat tyre; `oil` feeds a smoking engine.
+ */
+export const FIXES = {
+  replace: { toolId: 'driver', icon: 'crack' },
+  inflate: { toolId: 'pump', icon: 'flat' },
+  oil: { toolId: 'oiler', icon: 'oil' },
+} as const satisfies Record<string, { toolId: ToolId; icon: TroubleIconId }>;
+
+export type FixKind = keyof typeof FIXES;
 
 export interface PartSlot extends Point {
   /** Size of the part on this vehicle. Defaults to 1. */
@@ -190,21 +186,16 @@ export interface Vehicle {
   slots: Partial<Record<PartId, PartSlot>>;
 }
 
-/** A patch of dirt on a vehicle, in the vehicle's coordinates. */
-export interface DirtSpot extends Point {
-  r: number;
-}
-
 export interface RepairRequest {
   id: string;
   vehicle: Vehicle;
   partId: PartId;
   part: Part;
+  fix: FixKind;
   toolId: ToolId;
   tool: Tool;
-  /** Relative to the middle of the part, in the part's own size. */
+  /** Relative to the middle of the part, in the part's own size. Used when the fix is `replace`. */
   screws: Point[];
-  dirt: DirtSpot[];
   icon: TroubleIconId;
 }
 

@@ -6,14 +6,14 @@ import { partBoxStyle } from './partBox';
 import { ScrewLayer } from './ScrewLayer';
 
 /** How long the broken part takes to drop away; the step ends as it disappears. */
-const PART_FALL_MS = 900;
+export const PART_FALL_MS = 900;
 
 interface RemovalStepProps {
   request: RepairRequest;
   onFinished: () => void;
 }
 
-/** ② Every screw comes out, and the broken part falls off. */
+/** Every screw comes out, and the broken part falls off. */
 export function RemovalStep({ request, onFinished }: RemovalStepProps) {
   const sound = useSound();
   const [isRemoved, setIsRemoved] = useState(false);

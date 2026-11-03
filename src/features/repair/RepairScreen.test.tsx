@@ -1,44 +1,70 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { REPAIR_REQUESTS, slotOf, toWorkbench } from '@/features/vehicles';
+import { FIX_HOLD_MS } from './HoldFix';
+import { InstallationStep } from './InstallationStep';
+import { PART_FALL_MS, RemovalStep } from './RemovalStep';
 import { RepairScreen } from './RepairScreen';
+import { SCREW_HOLD_MS } from './ScrewLayer';
 
-const request = REPAIR_REQUESTS.find((item) => item.id === 'police-tire')!;
+const requestFor = (id: string) => REPAIR_REQUESTS.find((item) => item.id === id)!;
+const brokenSiren = requestFor('police-siren');
+const flatTyre = requestFor('police-tire');
+const dryEngine = requestFor('bus-engine');
 
-const renderStage = (stage: 'trouble' | 'removal' | 'installation') => {
-  const onPickTool = vi.fn();
-  const onFinishStage = vi.fn();
-  render(<RepairScreen request={request} stage={stage} onPickTool={onPickTool} onFinishStage={onFinishStage} />);
-  return { onPickTool, onFinishStage };
+const screws = () => screen.queryAllByRole('button', { name: 'ねじ' });
+
+const holdFor = (element: Element, ms: number) => {
+  fireEvent.pointerDown(element);
+  act(() => {
+    vi.advanceTimersByTime(ms);
+  });
 };
 
-const touchEveryScrew = () => {
-  // Each pass touches the first screw still waiting, until none are left.
-  for (let touches = 0; touches < 50; touches += 1) {
-    const [screw] = screen.queryAllByRole('button', { name: 'ねじ' });
-    if (!screw) return;
-    fireEvent.pointerDown(screw);
+const holdEveryScrew = () => {
+  // Each pass holds the first screw still waiting, until none are left.
+  for (let pass = 0; pass < 10 && screws().length > 0; pass += 1) {
+    holdFor(screws()[0], SCREW_HOLD_MS);
   }
 };
 
+const dropPartAt = (point: { x: number; y: number }) => {
+  const part = screen.getByTestId('new-part');
+  fireEvent.pointerDown(part, { clientX: 640, clientY: 712 });
+  fireEvent.pointerUp(part, { clientX: point.x, clientY: point.y });
+};
+
+const renderScreen = (request: typeof brokenSiren, stage: 'trouble' | 'fixing') => {
+  const onPickTool = vi.fn();
+  const onFinishStage = vi.fn();
+  const sut = <RepairScreen request={request} stage={stage} onPickTool={onPickTool} onFinishStage={onFinishStage} />;
+  render(sut);
+  return { onPickTool, onFinishStage };
+};
+
+beforeEach(() => {
+  vi.useFakeTimers();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
+
 describe('①困った', () => {
-  it('工具を押したとき、どの工具を選んだかが伝わる', async () => {
+  it('工具を押したとき、どの工具を選んだかが伝わる', () => {
     // Arrange
-    const user = userEvent.setup();
-    const { onPickTool } = renderStage('trouble');
+    const { onPickTool } = renderScreen(flatTyre, 'trouble');
 
     // Act
-    await user.click(screen.getByRole('button', { name: 'どりる' }));
+    fireEvent.click(screen.getByRole('button', { name: 'くうきいれ' }));
 
     // Assert
-    expect(onPickTool).toHaveBeenCalledWith('drill');
+    expect(onPickTool).toHaveBeenCalledWith('pump');
   });
 
   it('何も操作しないまま5秒たったとき、指のヒントが出る', () => {
     // Arrange
-    vi.useFakeTimers();
-    renderStage('trouble');
+    renderScreen(flatTyre, 'trouble');
 
     // Act
     act(() => {
@@ -47,90 +73,114 @@ describe('①困った', () => {
 
     // Assert
     expect(screen.getByRole('img', { name: 'ここを さわってね' })).toBeInTheDocument();
-    vi.useRealTimers();
   });
 });
 
-describe('②取り外し', () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  it('全部のねじを外したとき、②の完了が伝わる', () => {
-    // Arrange
-    const { onFinishStage } = renderStage('removal');
-    touchEveryScrew();
-
-    // Act
-    act(() => {
-      vi.runOnlyPendingTimers();
-    });
-
-    // Assert
-    expect(onFinishStage).toHaveBeenCalledWith('removal');
-  });
-
-  it('ねじが残っているとき、②は完了にならない', () => {
-    // Arrange
-    const { onFinishStage } = renderStage('removal');
-
-    // Act
-    fireEvent.pointerDown(screen.getAllByRole('button', { name: 'ねじ' })[0]);
-    act(() => {
-      vi.advanceTimersByTime(4000);
-    });
-
-    // Assert
-    expect(onFinishStage).not.toHaveBeenCalled();
-  });
-});
-
-describe('③取り付け', () => {
-  const dropPartAt = (point: { x: number; y: number }) => {
-    const part = screen.getByTestId('new-part');
-    fireEvent.pointerDown(part, { clientX: 640, clientY: 712 });
-    fireEvent.pointerUp(part, { clientX: point.x, clientY: point.y });
+describe('②部品交換：ねじを外す', () => {
+  const renderRemoval = () => {
+    const onFinished = vi.fn();
+    const sut = <RemovalStep request={brokenSiren} onFinished={onFinished} />;
+    render(sut);
+    return { onFinished };
   };
 
-  beforeEach(() => {
-    vi.useFakeTimers();
+  it('全部のねじを決まった時間長押ししたとき、外し終わりが伝わる', () => {
+    // Arrange
+    const { onFinished } = renderRemoval();
+    holdEveryScrew();
+
+    // Act
+    act(() => {
+      vi.advanceTimersByTime(PART_FALL_MS);
+    });
+
+    // Assert
+    expect(onFinished).toHaveBeenCalledOnce();
   });
 
-  afterEach(() => {
-    vi.useRealTimers();
+  it('ねじを短く押して離したとき、時間がたってもねじは外れない', () => {
+    // Arrange
+    renderRemoval();
+    const [screw] = screws();
+    holdFor(screw, 300);
+    fireEvent.pointerUp(screw);
+
+    // Act
+    act(() => {
+      vi.advanceTimersByTime(SCREW_HOLD_MS * 2);
+    });
+
+    // Assert
+    expect(screws()).toHaveLength(brokenSiren.screws.length);
   });
+
+  it('途中で離して押し直したとき、続きから回って外れる', () => {
+    // Arrange
+    renderRemoval();
+    const [screw] = screws();
+    holdFor(screw, 600);
+    fireEvent.pointerUp(screw);
+    fireEvent.pointerDown(screw);
+
+    // Act
+    act(() => {
+      vi.advanceTimersByTime(SCREW_HOLD_MS - 600);
+    });
+
+    // Assert
+    expect(screws()).toHaveLength(brokenSiren.screws.length - 1);
+  });
+
+  it('ねじが残っているとき、外し終わりは伝わらない', () => {
+    // Arrange
+    const { onFinished } = renderRemoval();
+    holdFor(screws()[0], SCREW_HOLD_MS);
+
+    // Act
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+
+    // Assert
+    expect(onFinished).not.toHaveBeenCalled();
+  });
+});
+
+describe('②部品交換：新しい部品をつける', () => {
+  const renderInstallation = () => {
+    const onFinished = vi.fn();
+    const sut = <InstallationStep request={brokenSiren} onFinished={onFinished} />;
+    render(sut);
+    return { onFinished };
+  };
 
   it('部品を場所の近くで離したとき、ねじが現れる', () => {
     // Arrange
-    renderStage('installation');
+    renderInstallation();
 
     // Act
-    dropPartAt(toWorkbench(slotOf(request)));
+    dropPartAt(toWorkbench(slotOf(brokenSiren)));
 
     // Assert
-    expect(screen.getAllByRole('button', { name: 'ねじ' })).toHaveLength(request.screws.length);
+    expect(screws()).toHaveLength(brokenSiren.screws.length);
   });
 
   it('部品を場所から遠くで離したとき、ねじは現れない', () => {
     // Arrange
-    renderStage('installation');
+    renderInstallation();
 
     // Act
     dropPartAt({ x: 100, y: 100 });
 
     // Assert
-    expect(screen.queryByRole('button', { name: 'ねじ' })).not.toBeInTheDocument();
+    expect(screws()).toHaveLength(0);
   });
 
-  it('部品をはめて全部のねじを締めたとき、③の完了が伝わる', () => {
+  it('部品をはめて全部のねじを締めたとき、つけ終わりが伝わる', () => {
     // Arrange
-    const { onFinishStage } = renderStage('installation');
-    dropPartAt(toWorkbench(slotOf(request)));
-    touchEveryScrew();
+    const { onFinished } = renderInstallation();
+    dropPartAt(toWorkbench(slotOf(brokenSiren)));
+    holdEveryScrew();
 
     // Act
     act(() => {
@@ -138,6 +188,102 @@ describe('③取り付け', () => {
     });
 
     // Assert
-    expect(onFinishStage).toHaveBeenCalledWith('installation');
+    expect(onFinished).toHaveBeenCalledOnce();
+  });
+});
+
+describe('②部品交換の流れ', () => {
+  it('ねじを全部外したとき、新しい部品が出てくる', () => {
+    // Arrange
+    renderScreen(brokenSiren, 'fixing');
+    holdEveryScrew();
+
+    // Act
+    act(() => {
+      vi.advanceTimersByTime(PART_FALL_MS);
+    });
+
+    // Assert
+    expect(screen.getByTestId('new-part')).toBeInTheDocument();
+  });
+
+  it('外して、はめて、締め終わったとき、②の完了が伝わる', () => {
+    // Arrange
+    const { onFinishStage } = renderScreen(brokenSiren, 'fixing');
+    holdEveryScrew();
+    act(() => {
+      vi.advanceTimersByTime(PART_FALL_MS);
+    });
+    dropPartAt(toWorkbench(slotOf(brokenSiren)));
+    holdEveryScrew();
+
+    // Act
+    act(() => {
+      vi.runOnlyPendingTimers();
+    });
+
+    // Assert
+    expect(onFinishStage).toHaveBeenCalledWith('fixing');
+  });
+});
+
+describe('②空気入れ', () => {
+  const pump = () => screen.getByRole('button', { name: 'くうきいれ' });
+
+  it('くうきいれを決まった時間長押ししたとき、②の完了が伝わる', () => {
+    // Arrange
+    const { onFinishStage } = renderScreen(flatTyre, 'fixing');
+    holdFor(pump(), FIX_HOLD_MS);
+
+    // Act
+    act(() => {
+      vi.runOnlyPendingTimers();
+    });
+
+    // Assert
+    expect(onFinishStage).toHaveBeenCalledWith('fixing');
+  });
+
+  it('くうきいれを短く押して離したとき、時間がたっても②は完了にならない', () => {
+    // Arrange
+    const { onFinishStage } = renderScreen(flatTyre, 'fixing');
+    holdFor(pump(), 500);
+    fireEvent.pointerUp(pump());
+
+    // Act
+    act(() => {
+      vi.advanceTimersByTime(FIX_HOLD_MS * 2);
+    });
+
+    // Assert
+    expect(onFinishStage).not.toHaveBeenCalled();
+  });
+
+  it('くうきいれを途中で離したとき、メーターはそこまでたまったままになる', () => {
+    // Arrange
+    renderScreen(flatTyre, 'fixing');
+    holdFor(pump(), FIX_HOLD_MS / 2);
+
+    // Act
+    fireEvent.pointerUp(pump());
+
+    // Assert
+    expect(screen.getByRole('progressbar', { name: 'くうき' })).toHaveAttribute('aria-valuenow', '50');
+  });
+});
+
+describe('②オイル', () => {
+  it('おいるさしを決まった時間長押ししたとき、②の完了が伝わる', () => {
+    // Arrange
+    const { onFinishStage } = renderScreen(dryEngine, 'fixing');
+    holdFor(screen.getByRole('button', { name: 'おいるさし' }), FIX_HOLD_MS);
+
+    // Act
+    act(() => {
+      vi.runOnlyPendingTimers();
+    });
+
+    // Assert
+    expect(onFinishStage).toHaveBeenCalledWith('fixing');
   });
 });

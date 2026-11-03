@@ -3,13 +3,11 @@ import './repair.css';
 
 const LABELS: Record<RepairStage, string> = {
   trouble: 'こまった',
-  removal: 'はずす',
-  installation: 'つける',
-  cleaning: 'おそうじ',
+  fixing: 'なおす',
   celebration: 'げんき',
 };
 
-/** Five stars that fill in as the repair moves along: progress anyone can read. */
+/** One star per step, filling in as the repair moves along: progress anyone can read. */
 export function StepBar({ stage }: { stage: RepairStage }) {
   const current = STAGES.indexOf(stage);
   return (

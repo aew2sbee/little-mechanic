@@ -19,7 +19,7 @@ interface InstallationStepProps {
   onFinished: () => void;
 }
 
-/** ③ The new part goes in its place, and the screws go back in. */
+/** The new part goes in its place, and the screws go back in. */
 export function InstallationStep({ request, onFinished }: InstallationStepProps) {
   const sound = useSound();
   const showHint = useIdleHint();

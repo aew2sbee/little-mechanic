@@ -1,5 +1,5 @@
-import { PARTS, TOOLS } from './catalog';
-import type { DirtSpot, PartId, RepairRequest, ToolId, TroubleIconId, Vehicle } from './catalog';
+import { FIXES, PARTS, TOOLS } from './catalog';
+import type { FixKind, PartId, RepairRequest, Vehicle } from './catalog';
 import {
   ambulance,
   bus,
@@ -54,68 +54,43 @@ const SCREWS: Record<PartId, RepairRequest['screws']> = {
   ],
 };
 
-/** Dirt for the two shapes of vehicle body. Requests pick which mud they get. */
-const DIRT_LOW: DirtSpot[] = [
-  { x: 120, y: 236, r: 70 },
-  { x: 260, y: 246, r: 62 },
-  { x: 390, y: 240, r: 66 },
-  { x: 526, y: 244, r: 60 },
-];
-const DIRT_HIGH: DirtSpot[] = [
-  { x: 130, y: 150, r: 60 },
-  { x: 290, y: 136, r: 64 },
-  { x: 440, y: 170, r: 56 },
-  { x: 540, y: 240, r: 48 },
-];
-const DIRT_ALL_OVER: DirtSpot[] = [
-  { x: 100, y: 190, r: 58 },
-  { x: 230, y: 240, r: 58 },
-  { x: 320, y: 150, r: 58 },
-  { x: 450, y: 236, r: 58 },
-  { x: 550, y: 190, r: 44 },
-];
-
-function request(
-  vehicle: Vehicle,
-  partId: PartId,
-  toolId: ToolId,
-  icon: TroubleIconId,
-  dirt: DirtSpot[],
-): RepairRequest {
+/** Each request names the part and how it is put right; the tool and badge come with the fix. */
+function request(vehicle: Vehicle, partId: PartId, fix: FixKind): RepairRequest {
+  const { toolId, icon } = FIXES[fix];
   return {
     id: `${vehicle.id}-${partId}`,
     vehicle,
     partId,
     part: PARTS[partId],
+    fix,
     toolId,
     tool: TOOLS[toolId],
     screws: SCREWS[partId],
-    dirt,
     icon,
   };
 }
 
 export const REPAIR_REQUESTS: RepairRequest[] = [
-  request(police, 'siren', 'pliers', 'crack', DIRT_LOW),
-  request(police, 'tire', 'wrench', 'flat', DIRT_ALL_OVER),
-  request(taxi, 'mirror', 'screwdriver', 'loose', DIRT_ALL_OVER),
-  request(taxi, 'light', 'screwdriver', 'crack', DIRT_LOW),
-  request(ambulance, 'siren', 'pliers', 'crack', DIRT_HIGH),
-  request(ambulance, 'mirror', 'screwdriver', 'loose', DIRT_LOW),
-  request(fireEngine, 'light', 'screwdriver', 'crack', DIRT_ALL_OVER),
-  request(fireEngine, 'door', 'drill', 'loose', DIRT_HIGH),
-  request(bus, 'door', 'drill', 'loose', DIRT_HIGH),
-  request(bus, 'engine', 'wrench', 'smoke', DIRT_ALL_OVER),
-  request(truck, 'tire', 'wrench', 'flat', DIRT_HIGH),
-  request(truck, 'muffler', 'wrench', 'smoke', DIRT_LOW),
-  request(dumpTruck, 'bumper', 'drill', 'crack', DIRT_HIGH),
-  request(dumpTruck, 'light', 'pliers', 'crack', DIRT_ALL_OVER),
-  request(mixer, 'tire', 'wrench', 'flat', DIRT_ALL_OVER),
-  request(mixer, 'engine', 'pliers', 'smoke', DIRT_LOW),
-  request(garbageTruck, 'door', 'drill', 'loose', DIRT_ALL_OVER),
-  request(garbageTruck, 'bumper', 'wrench', 'crack', DIRT_HIGH),
-  request(towTruck, 'muffler', 'pliers', 'smoke', DIRT_HIGH),
-  request(towTruck, 'bumper', 'drill', 'crack', DIRT_LOW),
+  request(police, 'siren', 'replace'),
+  request(police, 'tire', 'inflate'),
+  request(taxi, 'mirror', 'replace'),
+  request(taxi, 'light', 'replace'),
+  request(ambulance, 'siren', 'replace'),
+  request(ambulance, 'mirror', 'replace'),
+  request(fireEngine, 'light', 'replace'),
+  request(fireEngine, 'door', 'replace'),
+  request(bus, 'door', 'replace'),
+  request(bus, 'engine', 'oil'),
+  request(truck, 'tire', 'inflate'),
+  request(truck, 'muffler', 'replace'),
+  request(dumpTruck, 'bumper', 'replace'),
+  request(dumpTruck, 'light', 'replace'),
+  request(mixer, 'tire', 'inflate'),
+  request(mixer, 'engine', 'oil'),
+  request(garbageTruck, 'door', 'replace'),
+  request(garbageTruck, 'bumper', 'replace'),
+  request(towTruck, 'muffler', 'replace'),
+  request(towTruck, 'bumper', 'replace'),
 ];
 
 /** Every vehicle once, for the parade. */
