@@ -1,4 +1,4 @@
-export type SettingsStorage = Pick<Storage, 'getItem' | 'setItem'>;
+export type SettingsStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
 const STORAGE_KEY = 'sound-off';
 
@@ -9,6 +9,8 @@ interface ParentSettingsOptions {
 export interface ParentSettings {
   isSoundOn(): boolean;
   setSoundOn(isOn: boolean): void;
+  /** Back to the defaults, as if the app had never been opened. */
+  reset(): void;
 }
 
 export function createParentSettings({ storage }: ParentSettingsOptions): ParentSettings {
@@ -30,6 +32,14 @@ export function createParentSettings({ storage }: ParentSettingsOptions): Parent
         storage.setItem(STORAGE_KEY, String(!isOn));
       } catch {
         // Storage full or blocked: the setting lasts until the page closes.
+      }
+    },
+    reset() {
+      isSoundOn = true;
+      try {
+        storage.removeItem(STORAGE_KEY);
+      } catch {
+        // Nothing more can be done; memory is already back to the default.
       }
     },
   };

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ResetDialog } from './ResetDialog';
 import './parent-settings.css';
 
 interface ParentSettingsScreenProps {
@@ -6,7 +7,8 @@ interface ParentSettingsScreenProps {
   onSoundChange: (isOn: boolean) => void;
   stickerCount: number;
   stickerTotal: number;
-  onResetStickers: () => void;
+  /** Erases the stickers and the settings alike. Called only after the parent confirms. */
+  onReset: () => void;
   onClose: () => void;
 }
 
@@ -16,14 +18,15 @@ export function ParentSettingsScreen({
   onSoundChange,
   stickerCount,
   stickerTotal,
-  onResetStickers,
+  onReset,
   onClose,
 }: ParentSettingsScreenProps) {
   const [isConfirming, setIsConfirming] = useState(false);
 
   return (
     <div className="screen parent-settings" data-screen="parent-settings">
-      <section className="parent-card" aria-labelledby="parent-title">
+      {/* While the dialog asks, nothing behind it can be tapped or focused. */}
+      <section className="parent-card" aria-labelledby="parent-title" inert={isConfirming}>
         <h1 id="parent-title">保護者設定</h1>
         <div className="parent-row">
           <span id="sound-label">効果音</span>
@@ -40,37 +43,30 @@ export function ParentSettingsScreen({
         </div>
         <div className="parent-row">
           <span>
-            シール
+            保存データ
             <small>
-              {stickerCount} / {stickerTotal} 枚
+              シール {stickerCount} / {stickerTotal} 枚
             </small>
           </span>
-          {isConfirming ? (
-            <span className="parent-confirm">
-              <button
-                type="button"
-                className="parent-danger"
-                onClick={() => {
-                  onResetStickers();
-                  setIsConfirming(false);
-                }}
-              >
-                すべて消す
-              </button>
-              <button type="button" className="parent-button" onClick={() => setIsConfirming(false)}>
-                やめる
-              </button>
-            </span>
-          ) : (
-            <button type="button" className="parent-button" onClick={() => setIsConfirming(true)}>
-              リセット
-            </button>
-          )}
+          <button type="button" className="parent-button" onClick={() => setIsConfirming(true)}>
+            初期化
+          </button>
         </div>
         <button type="button" className="parent-button parent-close" onClick={onClose}>
           閉じる
         </button>
       </section>
+      {isConfirming && (
+        <ResetDialog
+          stickerCount={stickerCount}
+          stickerTotal={stickerTotal}
+          onConfirm={() => {
+            onReset();
+            setIsConfirming(false);
+          }}
+          onCancel={() => setIsConfirming(false)}
+        />
+      )}
     </div>
   );
 }

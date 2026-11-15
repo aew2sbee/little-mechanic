@@ -71,11 +71,6 @@
   font-size: 24px;
 }
 
-.parent-confirm {
-  display: flex;
-  gap: 14px;
-}
-
 .parent-button,
 .parent-switch,
 .parent-danger {
@@ -107,4 +102,38 @@
   align-self: center;
   margin-top: 8px;
   min-width: 260px;
+}
+
+/* Covers the settings, so nothing behind can be tapped until the parent decides. */
+.parent-dialog-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  background: rgb(43 42 61 / 45%);
+}
+
+.parent-dialog {
+  width: 680px;
+}
+
+.parent-dialog h2 {
+  margin: 0;
+  font-size: 36px;
+}
+
+.parent-dialog p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.parent-phrase {
+  display: inline-block;
+}
+
+.parent-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14px;
 }
