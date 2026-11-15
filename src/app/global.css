@@ -1,0 +1,72 @@
+:root {
+  --ink: #2b2a3d;
+  color: var(--ink);
+  font-family: 'Hiragino Maru Gothic ProN', 'Rounded Mplus 1c', 'Yu Gothic UI', 'Meiryo', sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+  background: #f7c873;
+  overscroll-behavior: none;
+  touch-action: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+}
+
+.stage {
+  position: fixed;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  transform-origin: 0 0;
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.session-home {
+  position: absolute;
+  top: 8px;
+  left: 14px;
+  z-index: 40;
+  scale: 0.8;
+  transform-origin: top left;
+}
+
+.rotate-prompt {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f7c873;
+  font-size: 48px;
+  font-weight: 800;
+}
+
+/* Only on devices small enough to hold: a desktop window should not lose the game. */
+@media (orientation: portrait) and (pointer: coarse) {
+  .rotate-prompt {
+    display: flex;
+  }
+}

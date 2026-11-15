@@ -1,0 +1,10 @@
+{
+  "name": "ちいさな しゅうりやさん",
+  "short_name": "しゅうりやさん",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#f7c873",
+  "theme_color": "#f7c873",
+  "start_url": ".",
+  "icons": [{ "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

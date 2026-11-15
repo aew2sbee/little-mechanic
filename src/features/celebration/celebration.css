@@ -1,0 +1,123 @@
+.confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.confetti__piece {
+  position: absolute;
+  top: -30px;
+  width: 18px;
+  height: 26px;
+  border-radius: 4px;
+  animation: confetti-fall 2.7s linear infinite;
+}
+
+@keyframes confetti-fall {
+  to {
+    transform: translateY(860px) rotate(540deg);
+  }
+}
+
+.run-car {
+  position: absolute;
+  bottom: 96px;
+  left: 300px;
+  width: 680px;
+  overflow: visible;
+  /* --run-duration comes from CelebrationScreen, which waits for the run to end. */
+  animation:
+    run-across var(--run-duration, 3.2s) cubic-bezier(0.3, 0.1, 0.3, 1) both,
+    run-bounce 0.36s ease-in-out infinite;
+}
+
+@keyframes run-across {
+  from {
+    translate: -1100px 0;
+  }
+  70% {
+    translate: 120px 0;
+  }
+}
+
+@keyframes run-bounce {
+  50% {
+    transform: translateY(-16px) rotate(-1.2deg);
+  }
+}
+
+.cheer {
+  position: absolute;
+  top: 116px;
+  left: 50%;
+  z-index: 5;
+  margin: 0;
+  padding: 8px 44px;
+  border: 6px solid var(--ink);
+  border-radius: 999px;
+  background: #fff6e4;
+  font-size: 54px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  animation: cheer-pop 0.4s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+
+@keyframes cheer-pop {
+  from {
+    opacity: 0;
+    scale: 0.5;
+  }
+}
+
+.sticker-prize {
+  position: absolute;
+  top: 210px;
+  left: 56px;
+  z-index: 5;
+  width: 260px;
+  height: 200px;
+  transform: rotate(-6deg);
+  animation: prize-pop 0.5s 0.2s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+
+@keyframes prize-pop {
+  from {
+    opacity: 0;
+    scale: 0.2;
+  }
+}
+
+.next-button {
+  position: absolute;
+  z-index: 6;
+  margin: -52px 0 0 -52px;
+}
+
+.parade-car {
+  position: absolute;
+  bottom: 64px;
+  left: 0;
+  width: 440px;
+  overflow: visible;
+  translate: -500px 0;
+  animation: parade-roll linear infinite;
+}
+
+@keyframes parade-roll {
+  from {
+    translate: -500px 0;
+  }
+  45%,
+  to {
+    translate: 1320px 0;
+  }
+}
+
+.parade-home {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 6;
+}
