@@ -88,9 +88,11 @@ export function App({ dependencies }: { dependencies: AppDependencies }) {
             }}
             stickerCount={collected.length}
             stickerTotal={STICKER_IDS.length}
-            onResetStickers={() => {
+            onReset={() => {
               book.reset();
+              settings.reset();
               setCollected(book.collected());
+              setIsSoundOn(settings.isSoundOn());
             }}
             onClose={goToGarage}
           />

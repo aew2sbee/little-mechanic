@@ -5,6 +5,7 @@ import { ParentSettingsGate } from './ParentSettingsGate';
 import { ParentSettingsScreen } from './ParentSettingsScreen';
 
 const GATE_NAME = 'ほごしゃ せってい（3びょう ながおし）';
+const DIALOG_NAME = 'データを初期化しますか？';
 
 describe('保護者設定の入口', () => {
   beforeEach(() => {
@@ -50,20 +51,23 @@ describe('保護者設定の入口', () => {
 
 describe('保護者設定の画面', () => {
   const renderScreen = () => {
-    const onResetStickers = vi.fn();
+    const onReset = vi.fn();
     const onSoundChange = vi.fn();
     render(
       <ParentSettingsScreen
         isSoundOn
         onSoundChange={onSoundChange}
-        stickerCount={3}
+        stickerCount={20}
         stickerTotal={20}
-        onResetStickers={onResetStickers}
+        onReset={onReset}
         onClose={vi.fn()}
       />,
     );
-    return { onResetStickers, onSoundChange };
+    return { onReset, onSoundChange };
   };
+
+  const openDialog = (user: ReturnType<typeof userEvent.setup>) =>
+    user.click(screen.getByRole('button', { name: '初期化' }));
 
   it('効果音のスイッチを押したとき、オフが伝わる', async () => {
     // Arrange
@@ -77,28 +81,108 @@ describe('保護者設定の画面', () => {
     expect(onSoundChange).toHaveBeenCalledWith(false);
   });
 
-  it('リセットを1回押しただけのとき、シールは消えない', async () => {
+  it('初期化を押したとき、消える枚数を添えた確認のポップアップが出る', async () => {
     // Arrange
     const user = userEvent.setup();
-    const { onResetStickers } = renderScreen();
+    renderScreen();
 
     // Act
-    await user.click(screen.getByRole('button', { name: 'リセット' }));
+    await openDialog(user);
 
     // Assert
-    expect(onResetStickers).not.toHaveBeenCalled();
+    expect(screen.getByRole('alertdialog', { name: DIALOG_NAME })).toHaveAccessibleDescription(
+      'シール（20 / 20 枚）と効果音の設定が消えます。元に戻せません。',
+    );
   });
 
-  it('リセットのあとにすべて消すを押したとき、シールが消える', async () => {
+  it('初期化を押しただけのとき、データは消えない', async () => {
     // Arrange
     const user = userEvent.setup();
-    const { onResetStickers } = renderScreen();
-    await user.click(screen.getByRole('button', { name: 'リセット' }));
+    const { onReset } = renderScreen();
 
     // Act
-    await user.click(screen.getByRole('button', { name: 'すべて消す' }));
+    await openDialog(user);
 
     // Assert
-    expect(onResetStickers).toHaveBeenCalledOnce();
+    expect(onReset).not.toHaveBeenCalled();
+  });
+
+  it('ポップアップが出たとき、やめるが選ばれた状態になる', async () => {
+    // Arrange
+    const user = userEvent.setup();
+    renderScreen();
+
+    // Act
+    await openDialog(user);
+
+    // Assert
+    expect(screen.getByRole('button', { name: 'やめる' })).toHaveFocus();
+  });
+
+  it('ポップアップでやめるを押したとき、データは消えない', async () => {
+    // Arrange
+    const user = userEvent.setup();
+    const { onReset } = renderScreen();
+    await openDialog(user);
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'やめる' }));
+
+    // Assert
+    expect(onReset).not.toHaveBeenCalled();
+  });
+
+  it('ポップアップでやめるを押したとき、ポップアップが閉じる', async () => {
+    // Arrange
+    const user = userEvent.setup();
+    renderScreen();
+    await openDialog(user);
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'やめる' }));
+
+    // Assert
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+  });
+
+  it('ポップアップでEscキーを押したとき、データは消えずにポップアップが閉じる', async () => {
+    // Arrange
+    const user = userEvent.setup();
+    const { onReset } = renderScreen();
+    await openDialog(user);
+
+    // Act
+    await user.keyboard('{Escape}');
+
+    // Assert
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(onReset).not.toHaveBeenCalled();
+  });
+
+  it('ポップアップで初期化するを押したとき、データが消える', async () => {
+    // Arrange
+    const user = userEvent.setup();
+    const { onReset } = renderScreen();
+    await openDialog(user);
+
+    // Act
+    await user.click(screen.getByRole('button', { name: '初期化する' }));
+
+    // Assert
+    expect(onReset).toHaveBeenCalledOnce();
+  });
+
+  it('ポップアップで初期化するを押したとき、ポップアップが閉じて保護者設定に残る', async () => {
+    // Arrange
+    const user = userEvent.setup();
+    renderScreen();
+    await openDialog(user);
+
+    // Act
+    await user.click(screen.getByRole('button', { name: '初期化する' }));
+
+    // Assert
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '保護者設定' })).toBeInTheDocument();
   });
 });

@@ -147,3 +147,29 @@ test('画面全体が縮小されていても、指の位置どおりに部品�
   // Assert
   await expect(page.getByRole('button', { name: 'ねじ' }).first()).toBeVisible();
 });
+
+test('修理でもらったシールを保護者設定で初期化したとき、再読み込みしても0枚のままになる', async ({ page }) => {
+  // Arrange
+  await openGarage(page);
+  await carNeeding(page, 'inflate').tap();
+  await pickCorrectTool(page);
+  await holdUntil(page, page.getByRole('button', { name: 'くうきいれ' }), () =>
+    expect(page.getByRole('progressbar', { name: 'くうき' })).toHaveAttribute('aria-valuenow', '100'),
+  );
+  await expect(nextButton(page)).toBeVisible({ timeout: 10_000 });
+  await nextButton(page).tap();
+  await holdUntil(page, page.getByRole('button', { name: 'ほごしゃ せってい（3びょう ながおし）' }), () =>
+    expect(page.getByRole('heading', { name: '保護者設定' })).toBeVisible(),
+  );
+  await expect(page.getByText(/^シール 1 \//)).toBeVisible();
+  await page.getByRole('button', { name: '初期化', exact: true }).tap();
+
+  // Act
+  await page.getByRole('alertdialog').getByRole('button', { name: '初期化する' }).tap();
+
+  // Assert
+  await page.reload();
+  await page.getByRole('button', { name: 'しーる' }).tap();
+  await expect(page.getByRole('list', { name: 'しーるちょう' })).toBeVisible();
+  await expect(stickers(page)).toHaveCount(0);
+});
