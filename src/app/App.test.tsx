@@ -1,5 +1,8 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createParentSettings } from '@/features/parent-settings';
+import { createStickerBook } from '@/features/stickers';
+import { REPAIR_REQUESTS } from '@/features/vehicles';
 import type { SoundPlayer } from '@/shared/sound';
 import { App } from './App';
 import type { AppDependencies, AppStorage } from './dependencies';
@@ -91,5 +94,53 @@ describe('アプリ全体の画面遷移', () => {
     // Assert
     expect(sound.setMuted).toHaveBeenLastCalledWith(true);
     vi.useRealTimers();
+  });
+});
+
+describe('保護者設定からの初期化', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const openResetDialog = () => {
+    fireEvent.pointerDown(screen.getByRole('button', { name: GATE_NAME }));
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
+    fireEvent.click(screen.getByRole('button', { name: '初期化' }));
+  };
+
+  it('シールをすべて集めたあとで初期化したとき、シールは0枚に戻る', () => {
+    // Arrange
+    const storage = createFakeStorage();
+    const book = createStickerBook({ storage, stickerIds: REPAIR_REQUESTS.map((request) => request.id) });
+    REPAIR_REQUESTS.forEach((request) => book.collect(request.id));
+    render(<App dependencies={createDependencies({ storage })} />);
+    openResetDialog();
+
+    // Act
+    fireEvent.click(screen.getByRole('button', { name: '初期化する' }));
+
+    // Assert
+    expect(screen.getByText(`シール 0 / ${REPAIR_REQUESTS.length} 枚`)).toBeInTheDocument();
+  });
+
+  it('効果音をオフにしたあとで初期化したとき、音が鳴るように戻る', () => {
+    // Arrange
+    const storage = createFakeStorage();
+    createParentSettings({ storage }).setSoundOn(false);
+    const sound = createFakeSound();
+    render(<App dependencies={createDependencies({ storage, sound })} />);
+    openResetDialog();
+
+    // Act
+    fireEvent.click(screen.getByRole('button', { name: '初期化する' }));
+
+    // Assert
+    expect(sound.setMuted).toHaveBeenLastCalledWith(false);
   });
 });
